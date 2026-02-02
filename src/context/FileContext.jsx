@@ -32,7 +32,7 @@ export const FileProvider = ({ children }) => {
 
   const setCurrentFolder = useCallback(async (folder) => {
     setCurrentFolderState(folder);
-    
+
     // Update folder path
     if (!folder) {
       setFolderPath([]);
@@ -40,10 +40,10 @@ export const FileProvider = ({ children }) => {
       // Fetch folder path from server if needed
       try {
         const pathResponse = await folderService.getFolderPath(folder._id);
-        if (pathResponse.success) {
-          setFolderPath(pathResponse.data || [folder]);
+        if (pathResponse.success && Array.isArray(pathResponse.data) && pathResponse.data.length > 0) {
+          setFolderPath(pathResponse.data);
         } else {
-          // Fallback: add to current path
+          // Fallback: construct path manually
           setFolderPath(prev => {
             const existingIndex = prev.findIndex(f => f._id === folder._id);
             if (existingIndex >= 0) {
@@ -53,7 +53,7 @@ export const FileProvider = ({ children }) => {
           });
         }
       } catch (error) {
-        // Fallback: add to current path
+        // Fallback: construct path manually
         setFolderPath(prev => {
           const existingIndex = prev.findIndex(f => f._id === folder._id);
           if (existingIndex >= 0) {
@@ -67,32 +67,40 @@ export const FileProvider = ({ children }) => {
 
   const deleteFile = async (fileId) => {
     try {
+      console.log('🗑️ Attempting to delete file:', fileId);
       const response = await fileService.deleteFile(fileId);
+      console.log('🗑️ Delete response:', response);
       if (response.success) {
         toast.success('File deleted successfully');
         refreshFiles();
       } else {
+        console.error('❌ Delete failed:', response.message);
         toast.error(response.message || 'Failed to delete file');
       }
       return response;
     } catch (error) {
-      toast.error('Failed to delete file');
+      console.error('❌ Delete error:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete file');
       throw error;
     }
   };
 
   const deleteFolder = async (folderId) => {
     try {
+      console.log('🗑️ Attempting to delete folder:', folderId);
       const response = await folderService.deleteFolder(folderId);
+      console.log('🗑️ Delete response:', response);
       if (response.success) {
         toast.success('Folder deleted successfully');
         refreshFiles();
       } else {
+        console.error('❌ Delete failed:', response.message);
         toast.error(response.message || 'Failed to delete folder');
       }
       return response;
     } catch (error) {
-      toast.error('Failed to delete folder');
+      console.error('❌ Delete error:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete folder');
       throw error;
     }
   };

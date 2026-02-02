@@ -1,9 +1,13 @@
 @import "tailwindcss";
 
+/* Configure dark mode variant for Tailwind v4 */
+@variant dark (&:where(.dark, .dark *));
+
+
 /* Custom theme */
 @theme {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  
+
   --color-primary-50: #eef2ff;
   --color-primary-100: #e0e7ff;
   --color-primary-200: #c7d2fe;
@@ -14,11 +18,11 @@
   --color-primary-700: #4338ca;
   --color-primary-800: #3730a3;
   --color-primary-900: #312e81;
-  
+
   --color-accent-400: #e879f9;
   --color-accent-500: #d946ef;
   --color-accent-600: #c026d3;
-  
+
   --color-dark-500: #64748b;
   --color-dark-600: #475569;
   --color-dark-700: #334155;
@@ -324,6 +328,7 @@ body {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -335,6 +340,7 @@ body {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -342,8 +348,13 @@ body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleIn {
@@ -351,6 +362,7 @@ body {
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -362,11 +374,16 @@ body {
     opacity: 0;
     transform: scale(0.3);
   }
+
   50% {
     opacity: 0.9;
     transform: scale(1.05);
   }
-  70% { transform: scale(0.95); }
+
+  70% {
+    transform: scale(0.95);
+  }
+
   100% {
     opacity: 1;
     transform: scale(1);
@@ -374,8 +391,13 @@ body {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Enhanced glassmorphism effects for modern UI */

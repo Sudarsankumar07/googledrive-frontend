@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { 
-  LayoutGrid, 
-  List, 
-  Upload, 
+import {
+  LayoutGrid,
+  List,
+  Upload,
   FolderPlus,
   RefreshCw,
   SortAsc,
@@ -26,31 +26,31 @@ import StorageIndicator from './StorageIndicator';
 
 const Dashboard = () => {
   const { fileInputRef } = useOutletContext();
-  const { 
-    files, 
-    folders, 
-    loading, 
-    refreshFiles, 
+  const {
+    files,
+    folders,
+    loading,
+    refreshFiles,
     currentFolder,
     isUploading,
     uploadProgress,
     setUploadProgress,
     setIsUploading
   } = useFiles();
-  
+
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc');
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults] = useState({ files: [], folders: [] });
   const [isSearchActive, setIsSearchActive] = useState(false);
   const sortMenuRef = useRef(null);
 
   const handleSearchResults = useCallback((results) => {
-    setSearchResults(results || []);
-    setIsSearchActive((results || []).length !== (files || []).length);
-  }, [files]);
+    setSearchResults(results || { files: [], folders: [] });
+    setIsSearchActive(results.isActive || false);
+  }, []);
 
   useEffect(() => {
     refreshFiles();
@@ -69,8 +69,26 @@ const Dashboard = () => {
   // Handle file upload from sidebar
   useEffect(() => {
     const handleFileChange = async (e) => {
-      const selectedFiles = Array.from(e.target.files);
+      let selectedFiles = Array.from(e.target.files);
       if (selectedFiles.length === 0) return;
+
+      // Validate file sizes (100MB limit - matches backend)
+      const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+      const oversizedFiles = selectedFiles.filter(file => file.size > MAX_FILE_SIZE);
+
+      if (oversizedFiles.length > 0) {
+        oversizedFiles.forEach(file => {
+          toast.error(`File "${file.name}" exceeds 100MB limit`);
+        });
+
+        // Filter out oversized files
+        const validFiles = selectedFiles.filter(file => file.size <= MAX_FILE_SIZE);
+        if (validFiles.length === 0) {
+          return;
+        }
+        // Continue with valid files only
+        selectedFiles = validFiles;
+      }
 
       setIsUploading(true);
       const totalFiles = selectedFiles.length;
@@ -145,9 +163,16 @@ const Dashboard = () => {
     });
   };
 
-  const displayFiles = isSearchActive ? searchResults : (files || []);
-  const sortedFolders = sortItems(folders || [], 'folder');
-  const sortedFiles = sortItems(displayFiles, 'file');
+  const displayFiles = isSearchActive ? searchResults.files : (files || []);
+  const displayFolders = isSearchActive ? searchResults.folders : (folders || []);
+
+  const sortedFolders = useMemo(() => {
+    return sortItems(displayFolders, 'folder');
+  }, [displayFolders, sortBy, sortOrder]);
+
+  const sortedFiles = useMemo(() => {
+    return sortItems(displayFiles, 'file');
+  }, [displayFiles, sortBy, sortOrder]);
 
   const sortOptions = [
     { value: 'name', label: 'Name' },
@@ -160,7 +185,7 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <Breadcrumb />
-        
+
         <div className="flex items-center gap-2">
           {/* Refresh */}
           <button
@@ -197,9 +222,8 @@ const Dashboard = () => {
                       }
                       setShowSortMenu(false);
                     }}
-                    className={`w-full flex items-center justify-between px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-dark-700 ${
-                      sortBy === option.value ? 'text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-200'
-                    }`}
+                    className={`w-full flex items-center justify-between px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-dark-700 ${sortBy === option.value ? 'text-primary-600 dark:text-primary-400' : 'text-gray-700 dark:text-gray-200'
+                      }`}
                   >
                     {option.label}
                     {sortBy === option.value && (
@@ -215,21 +239,19 @@ const Dashboard = () => {
           <div className="flex items-center bg-gray-100 dark:bg-dark-800 rounded-xl p-1">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-colors ${
-                viewMode === 'grid'
-                  ? 'bg-white dark:bg-dark-700 text-primary-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
+              className={`p-2 rounded-lg transition-colors ${viewMode === 'grid'
+                ? 'bg-white dark:bg-dark-700 text-primary-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`}
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-colors ${
-                viewMode === 'list'
-                  ? 'bg-white dark:bg-dark-700 text-primary-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
+              className={`p-2 rounded-lg transition-colors ${viewMode === 'list'
+                ? 'bg-white dark:bg-dark-700 text-primary-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`}
             >
               <List className="w-4 h-4" />
             </button>
@@ -258,8 +280,9 @@ const Dashboard = () => {
       </div>
 
       {/* Advanced Search */}
-      <AdvancedSearch 
-        files={files || []} 
+      <AdvancedSearch
+        files={files || []}
+        folders={folders || []}
         onSearchResults={handleSearchResults}
         className="mb-6"
       />

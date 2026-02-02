@@ -3,12 +3,14 @@ import { X, Download, Eye, ZoomIn, ZoomOut } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { isImageFile, isTextFile, getFileType } from '../../utils/fileUtils';
+import fileService from '../../services/fileService';
 
 const FilePreview = ({ file, onClose, isOpen }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imageZoom, setImageZoom] = useState(1);
   const [textContent, setTextContent] = useState('');
+  const [downloadUrl, setDownloadUrl] = useState(null);
 
   useEffect(() => {
     if (!isOpen || !file) return;
@@ -16,25 +18,39 @@ const FilePreview = ({ file, onClose, isOpen }) => {
     setLoading(true);
     setError(null);
     setImageZoom(1);
+    setDownloadUrl(null);
 
-    // Load text content if it's a text file
-    if (isTextFile(file.mimeType, file.name)) {
-      fetchTextContent();
-    } else {
-      setLoading(false);
-    }
+    // Fetch download URL first
+    fetchDownloadUrl();
   }, [isOpen, file]);
 
-  const fetchTextContent = async () => {
+  const fetchDownloadUrl = async () => {
     try {
-      const fileUrl = file.downloadUrl || file.url;
-      if (fileUrl) {
-        const response = await fetch(fileUrl);
-        const content = await response.text();
-        setTextContent(content.slice(0, 5000)); // Limit to first 5000 chars for preview
+      const result = await fileService.downloadFile(file._id);
+      if (result.success && result.data.downloadUrl) {
+        setDownloadUrl(result.data.downloadUrl);
+
+        // Load text content if it's a text file
+        if (isTextFile(file.mimeType, file.name)) {
+          fetchTextContent(result.data.downloadUrl);
+        } else {
+          setLoading(false);
+        }
       } else {
-        setError('File URL not available');
+        setError('Failed to get download URL');
+        setLoading(false);
       }
+    } catch (err) {
+      setError('Failed to load file');
+      setLoading(false);
+    }
+  };
+
+  const fetchTextContent = async (url) => {
+    try {
+      const response = await fetch(url);
+      const content = await response.text();
+      setTextContent(content.slice(0, 5000)); // Limit to first 5000 chars for preview
     } catch (err) {
       setError('Failed to load file content');
       console.error('Error fetching text content:', err);
@@ -45,7 +61,7 @@ const FilePreview = ({ file, onClose, isOpen }) => {
 
   const getLanguageFromFilename = (filename) => {
     if (!filename) return 'text';
-    
+
     const extension = filename.split('.').pop()?.toLowerCase();
     const langMap = {
       'js': 'javascript',
@@ -69,19 +85,19 @@ const FilePreview = ({ file, onClose, isOpen }) => {
       'go': 'go',
       'rs': 'rust'
     };
-    
+
     return langMap[extension] || 'text';
   };
 
   const renderImagePreview = () => (
     <div className="relative flex items-center justify-center min-h-[300px]">
-      <img 
-        src={file.downloadUrl} 
+      <img
+        src={downloadUrl || '/placeholder.png'}
         alt={file.name}
         style={{ transform: `scale(${imageZoom})` }}
         className="max-h-[70vh] max-w-full object-contain transition-transform duration-200"
         onLoad={() => setLoading(false)}
-        onError={() => {
+        onError={(e) => {
           setError('Failed to load image');
           setLoading(false);
         }}
@@ -107,7 +123,7 @@ const FilePreview = ({ file, onClose, isOpen }) => {
 
   const renderTextPreview = () => {
     const language = getLanguageFromFilename(file.name);
-    
+
     return (
       <div className="bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden">
         <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 text-sm text-gray-600 dark:text-gray-300 border-b">
@@ -138,7 +154,7 @@ const FilePreview = ({ file, onClose, isOpen }) => {
 
   const renderDefaultPreview = () => {
     const fileType = getFileType(file.mimeType);
-    
+
     return (
       <div className="text-center py-16">
         <Eye className="w-16 h-16 mx-auto text-gray-400 mb-4" />
@@ -147,7 +163,13 @@ const FilePreview = ({ file, onClose, isOpen }) => {
           {fileType.charAt(0).toUpperCase() + fileType.slice(1)} file • {file.name}
         </p>
         <button
-          onClick={() => window.open(file.downloadUrl, '_blank')}
+          onClick={() => {
+            if (downloadUrl) {
+              window.open(downloadUrl, '_blank');
+            } else {
+              setError('Download URL not available');
+            }
+          }}
           className="btn-primary mt-4"
         >
           Open in New Tab
@@ -160,7 +182,7 @@ const FilePreview = ({ file, onClose, isOpen }) => {
     if (loading) {
       return (
         <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
         </div>
       );
     }
@@ -169,7 +191,11 @@ const FilePreview = ({ file, onClose, isOpen }) => {
       return (
         <div className="text-center py-16">
           <div className="text-red-500 mb-4">{error}</div>
-          <button onClick={() => fetchTextContent()} className="btn-secondary">
+          <button onClick={() => {
+            setError(null);
+            setLoading(true);
+            fetchDownloadUrl();
+          }} className="btn-secondary">
             Retry
           </button>
         </div>
@@ -204,7 +230,13 @@ const FilePreview = ({ file, onClose, isOpen }) => {
           </div>
           <div className="flex gap-2 ml-4">
             <button
-              onClick={() => window.open(file.downloadUrl, '_blank')}
+              onClick={() => {
+                if (downloadUrl) {
+                  window.open(downloadUrl, '_blank');
+                } else {
+                  setError('Download URL not available');
+                }
+              }}
               className="btn-ghost p-2"
               title="Download"
             >

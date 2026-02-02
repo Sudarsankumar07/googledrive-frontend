@@ -1,7 +1,7 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Formik, Form } from 'formik';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import AuthLayout from '../layout/AuthLayout';
 import Input from '../common/Input';
@@ -12,7 +12,6 @@ import { loginSchema } from '../../utils/validators';
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (values, { setSubmitting }) => {
     try {
@@ -54,35 +53,19 @@ const Login = () => {
               error={touched.email && errors.email}
             />
 
-            <div className="relative">
-              <Input
-                label="Password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                icon={Lock}
-                value={values.password}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.password && errors.password}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-9 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
+            <Input
+              label="Password"
+              name="password"
+              type="password"
+              placeholder="••••••••"
+              icon={Lock}
+              value={values.password}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={touched.password && errors.password}
+            />
 
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-600 dark:text-gray-400">Remember me</span>
-              </label>
+            <div className="flex items-center justify-end">
               <Link
                 to="/forgot-password"
                 className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium"
@@ -98,15 +81,15 @@ const Login = () => {
               className="py-3"
             >
               {isSubmitting ? (
-                <>
+                <span className="flex items-center justify-center gap-2">
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Signing in...
-                </>
+                </span>
               ) : (
-                <>
+                <span className="flex items-center justify-center gap-2">
                   Sign in
                   <ArrowRight className="w-5 h-5" />
-                </>
+                </span>
               )}
             </Button>
 
@@ -133,7 +116,7 @@ const Login = () => {
           </Form>
         )}
       </Formik>
-    </AuthLayout>
+    </AuthLayout >
   );
 };
 

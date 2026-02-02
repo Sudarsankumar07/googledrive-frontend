@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { 
+import {
   Folder,
   MoreVertical,
   Trash2,
@@ -41,9 +41,9 @@ const FolderItem = ({ folder, viewMode = 'grid' }) => {
     return (
       <>
         <div className="group flex items-center gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-xl transition-colors cursor-pointer">
-          <div 
+          <div
             className="flex items-center gap-4 flex-1 min-w-0"
-            onDoubleClick={handleOpen}
+            onClick={handleOpen}
           >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center flex-shrink-0">
               <Folder className="w-5 h-5 text-white" />
@@ -55,11 +55,11 @@ const FolderItem = ({ folder, viewMode = 'grid' }) => {
               <p className="text-xs text-gray-500">Folder</p>
             </div>
           </div>
-          
+
           <span className="text-sm text-gray-500 hidden md:block w-40">
             {formatDate(folder.createdAt)}
           </span>
-          
+
           <span className="text-sm text-gray-500 hidden lg:block w-24">
             —
           </span>
@@ -135,9 +135,9 @@ const FolderItem = ({ folder, viewMode = 'grid' }) => {
 
   return (
     <>
-      <div 
+      <div
         className="group relative bg-white dark:bg-dark-800 rounded-2xl p-4 hover:shadow-lg dark:hover:shadow-dark-700/50 transition-all duration-200 cursor-pointer border border-gray-100 dark:border-dark-700"
-        onDoubleClick={handleOpen}
+        onClick={handleOpen}
       >
         <div className="flex flex-col items-center gap-3">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-lg shadow-yellow-500/30">

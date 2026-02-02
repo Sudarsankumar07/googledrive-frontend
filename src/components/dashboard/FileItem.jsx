@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { 
+import {
   FileText,
   FileImage,
   FileVideo,
@@ -73,7 +73,7 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
       if (result.success && result.data.downloadUrl) {
         window.open(result.data.downloadUrl, '_blank');
       } else {
-        toast.error('Failed to download file');
+        toast.error('Download URL not available');
       }
     } catch (error) {
       toast.error('Failed to download file');
@@ -99,12 +99,12 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
   if (viewMode === 'list') {
     return (
       <>
-        <div 
+        <div
           className="group flex items-center gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-xl transition-colors cursor-pointer"
           onClick={handlePreview}
         >
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            <FileTypeIcon 
+            <FileTypeIcon
               mimeType={file.mimeType}
               fileName={file.name}
               className="w-6 h-6"
@@ -117,11 +117,11 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
               <p className="text-xs text-gray-500 capitalize">{fileType}</p>
             </div>
           </div>
-          
+
           <span className="text-sm text-gray-500 hidden md:block w-40">
             {formatDate(file.createdAt)}
           </span>
-          
+
           <span className="text-sm text-gray-500 hidden lg:block w-24">
             {formatFileSize(file.size)}
           </span>
@@ -210,25 +210,25 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
     <>
       <div className="group relative bg-white dark:bg-dark-800 rounded-2xl p-4 hover:shadow-lg dark:hover:shadow-dark-700/50 transition-all duration-200 border border-gray-100 dark:border-dark-700">
         {/* Preview area */}
-        <div 
+        <div
           className="aspect-square rounded-xl bg-gray-50 dark:bg-dark-700 flex items-center justify-center mb-3 overflow-hidden cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors"
           onClick={handlePreview}
         >
           {fileType === 'image' && file.url ? (
-            <img 
-              src={file.url} 
+            <img
+              src={file.url}
               alt={file.name}
               className="w-full h-full object-cover"
             />
           ) : (
-            <FileTypeIcon 
+            <FileTypeIcon
               mimeType={file.mimeType}
               fileName={file.name}
               className="w-12 h-12"
               showBackground={true}
             />
           )}
-          
+
           {/* Preview overlay */}
           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
             <Eye className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -245,14 +245,13 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
               {formatFileSize(file.size)}
             </p>
           </div>
-          
+
           {/* Smart Tags */}
-          <SmartTags 
-            file={file} 
+          <SmartTags
+            file={file}
             className="mt-2"
             onTagClick={(tag) => {
-              // Could trigger search by this tag
-              console.log('Tag clicked:', tag);
+              // Tag click handler
             }}
           />
         </div>

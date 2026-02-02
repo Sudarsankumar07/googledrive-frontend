@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Formik, Form } from 'formik';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
+import { User, Mail, Lock, ArrowRight, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import AuthLayout from '../layout/AuthLayout';
 import Input from '../common/Input';
@@ -12,8 +12,6 @@ import { registerSchema } from '../../utils/validators';
 const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registered, setRegistered] = useState(false);
 
   const handleSubmit = async (values, { setSubmitting }) => {
@@ -24,7 +22,7 @@ const Register = () => {
         email: values.email,
         password: values.password
       });
-      
+
       if (result.success) {
         setRegistered(true);
         toast.success('Account created! Please check your email to activate.');
@@ -48,9 +46,9 @@ const Register = () => {
           <div className="w-20 h-20 mx-auto rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
             <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
           </div>
-          
+
           <p className="text-gray-600 dark:text-gray-400">
-            Your account has been created successfully. 
+            Your account has been created successfully.
             You can now login with your credentials.
           </p>
 
@@ -120,47 +118,29 @@ const Register = () => {
               error={touched.email && errors.email}
             />
 
-            <div className="relative">
-              <Input
-                label="Password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                icon={Lock}
-                value={values.password}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.password && errors.password}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-9 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
+            <Input
+              label="Password"
+              name="password"
+              type="password"
+              placeholder="••••••••"
+              icon={Lock}
+              value={values.password}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={touched.password && errors.password}
+            />
 
-            <div className="relative">
-              <Input
-                label="Confirm password"
-                name="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="••••••••"
-                icon={Lock}
-                value={values.confirmPassword}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.confirmPassword && errors.confirmPassword}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-9 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
+            <Input
+              label="Confirm password"
+              name="confirmPassword"
+              type="password"
+              placeholder="••••••••"
+              icon={Lock}
+              value={values.confirmPassword}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={touched.confirmPassword && errors.confirmPassword}
+            />
 
             {/* Password strength indicator */}
             <div className="space-y-2">
@@ -168,15 +148,14 @@ const Register = () => {
                 {[1, 2, 3, 4].map((level) => (
                   <div
                     key={level}
-                    className={`h-1 flex-1 rounded-full ${
-                      values.password.length >= level * 3
+                    className={`h-1 flex-1 rounded-full ${values.password.length >= level * 3
                         ? level <= 2
                           ? 'bg-red-500'
                           : level === 3
-                          ? 'bg-yellow-500'
-                          : 'bg-green-500'
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
                         : 'bg-gray-200 dark:bg-dark-700'
-                    }`}
+                      }`}
                   />
                 ))}
               </div>

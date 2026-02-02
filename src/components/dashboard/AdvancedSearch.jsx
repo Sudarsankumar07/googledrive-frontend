@@ -3,7 +3,7 @@ import { Search, Filter, X, File, Calendar, HardDrive, FileType } from 'lucide-r
 import Fuse from 'fuse.js';
 import { filterFiles, getFileType } from '../../utils/fileUtils';
 
-const AdvancedSearch = ({ files = [], onSearchResults = () => {}, className = '' }) => {
+const AdvancedSearch = ({ files = [], folders = [], onSearchResults = () => { }, className = '' }) => {
   const [query, setQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState({
@@ -15,14 +15,14 @@ const AdvancedSearch = ({ files = [], onSearchResults = () => {}, className = ''
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
-  
+
   const searchRef = useRef(null);
   const suggestionsRef = useRef(null);
 
   // Initialize Fuse.js for fuzzy search
   const fuse = useMemo(() => {
     if (!files || !files.length) return null;
-    
+
     try {
       return new Fuse(files, {
         keys: [
@@ -42,13 +42,13 @@ const AdvancedSearch = ({ files = [], onSearchResults = () => {}, className = ''
   // Get unique extensions from files
   const availableExtensions = useMemo(() => {
     if (!files || !files.length) return [];
-    
+
     const extensions = files
       .map(file => file.name ? file.name.split('.').pop()?.toLowerCase() : '')
       .filter(ext => ext && ext.length <= 5)
       .filter((ext, index, arr) => arr.indexOf(ext) === index)
       .sort();
-    
+
     return extensions;
   }, [files]);
 
@@ -97,45 +97,69 @@ const AdvancedSearch = ({ files = [], onSearchResults = () => {}, className = ''
     setSuggestions(newSuggestions.slice(0, 5));
   }, [query, files, availableExtensions]);
 
+  // Check if any filters are active (moved before useMemo that uses it)
+  const hasActiveFilters = () => {
+    return Object.values(filters).some(value => value !== 'all' && value !== 'any') || query.trim();
+  };
+
   // Perform search
   const searchResults = useMemo(() => {
-    if (!files || !files.length) return [];
+    if (!files || !files.length) {
+      return {
+        files: [],
+        folders: folders || [],
+        isActive: hasActiveFilters()
+      };
+    }
 
-    let results = [...files];
+    let resultFiles = [...files];
+    let resultFolders = [...(folders || [])];
 
-    // Apply filters first
-    results = filterFiles(results, filters);
+    // Apply filters to files
+    resultFiles = filterFiles(resultFiles, filters);
 
-    // Apply text search
+    // Filter folders by name if there's a query
+    if (query.trim()) {
+      const queryLower = query.toLowerCase();
+      resultFolders = resultFolders.filter(folder =>
+        folder.name && folder.name.toLowerCase().includes(queryLower)
+      );
+    }
+
+    // Apply text search to files
     if (query.trim()) {
       if (fuse) {
         try {
           const fuseResults = fuse.search(query.trim());
           const searchedFiles = fuseResults.map(result => result.item);
-          
+
           // Keep only filtered files that also match the search
-          results = results.filter(file => 
+          resultFiles = resultFiles.filter(file =>
             searchedFiles.some(searchedFile => searchedFile._id === file._id)
           );
         } catch (error) {
           console.error('Fuse search error:', error);
           // Fallback to simple string matching
           const queryLower = query.toLowerCase();
-          results = results.filter(file =>
+          resultFiles = resultFiles.filter(file =>
             file.name && file.name.toLowerCase().includes(queryLower)
           );
         }
       } else {
         // Fallback to simple string matching
         const queryLower = query.toLowerCase();
-        results = results.filter(file =>
+        resultFiles = resultFiles.filter(file =>
           file.name && file.name.toLowerCase().includes(queryLower)
         );
       }
     }
 
-    return results;
-  }, [files, query, filters, fuse]);
+    return {
+      files: resultFiles,
+      folders: resultFolders,
+      isActive: hasActiveFilters()
+    };
+  }, [files, folders, query, filters, fuse]);
 
   // Update parent component with results
   useEffect(() => {
@@ -165,7 +189,7 @@ const AdvancedSearch = ({ files = [], onSearchResults = () => {}, className = ''
       setQuery('');
     }
     setShowSuggestions(false);
-    
+
     // Add to recent searches
     addToRecentSearches(suggestion.text);
   };
@@ -190,16 +214,11 @@ const AdvancedSearch = ({ files = [], onSearchResults = () => {}, className = ''
     setShowSuggestions(false);
   };
 
-  // Check if any filters are active
-  const hasActiveFilters = () => {
-    return Object.values(filters).some(value => value !== 'all' && value !== 'any') || query.trim();
-  };
-
   // Handle click outside to close suggestions
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
-        searchRef.current && 
+        searchRef.current &&
         !searchRef.current.contains(event.target) &&
         suggestionsRef.current &&
         !suggestionsRef.current.contains(event.target)
@@ -220,11 +239,11 @@ const AdvancedSearch = ({ files = [], onSearchResults = () => {}, className = ''
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Search files... (try typing file name or extension)"
+            placeholder="Search files and folders..."
             value={query}
             onChange={handleSearchChange}
             onFocus={() => setShowSuggestions(query.length > 0)}
-            className="input pl-10 pr-20 w-full"
+            className="input !pl-10 pr-20 w-full"
           />
           <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
             <button
@@ -248,7 +267,7 @@ const AdvancedSearch = ({ files = [], onSearchResults = () => {}, className = ''
 
         {/* Search Suggestions */}
         {showSuggestions && (suggestions.length > 0 || recentSearches.length > 0) && (
-          <div 
+          <div
             ref={suggestionsRef}
             className="absolute top-full left-0 right-0 z-50 mt-1 bg-white dark:bg-dark-800 rounded-lg border border-gray-200 dark:border-dark-700 shadow-lg overflow-hidden"
           >
@@ -269,7 +288,7 @@ const AdvancedSearch = ({ files = [], onSearchResults = () => {}, className = ''
                 ))}
               </div>
             )}
-            
+
             {recentSearches.length > 0 && (
               <div>
                 <div className="px-3 py-2 text-xs font-medium text-gray-500 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
@@ -376,7 +395,7 @@ const AdvancedSearch = ({ files = [], onSearchResults = () => {}, className = ''
           {/* Filter Summary */}
           <div className="mt-4 flex items-center justify-between text-sm">
             <div className="text-gray-600 dark:text-gray-400">
-              Showing {searchResults.length} of {files.length} files
+              Showing {searchResults.files.length + searchResults.folders.length} of {files.length + (folders?.length || 0)} items
             </div>
             {hasActiveFilters() && (
               <button
