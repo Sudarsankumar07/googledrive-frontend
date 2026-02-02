@@ -11,12 +11,18 @@ import {
   Download,
   Trash2,
   Edit2,
-  Eye
+  Eye,
+  Share2
 } from 'lucide-react';
 import { formatDate, formatFileSize, getFileType } from '../../utils/helpers';
+import { generateFileTags } from '../../utils/fileUtils';
 import { useFiles } from '../../context/FileContext';
 import ConfirmDialog from '../common/ConfirmDialog';
 import RenameModal from './RenameModal';
+import FilePreview from '../common/FilePreview';
+import QRShare from './QRShare';
+import FileTypeIcon from '../common/FileTypeIcon';
+import SmartTags from '../common/SmartTags';
 import fileService from '../../services/fileService';
 import { toast } from 'react-toastify';
 
@@ -44,6 +50,8 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRename, setShowRename] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [showQRShare, setShowQRShare] = useState(false);
   const menuRef = useRef(null);
 
   const fileType = getFileType(file.mimeType);
@@ -73,6 +81,16 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
     setShowMenu(false);
   };
 
+  const handlePreview = () => {
+    setShowPreview(true);
+    setShowMenu(false);
+  };
+
+  const handleQRShare = () => {
+    setShowQRShare(true);
+    setShowMenu(false);
+  };
+
   const handleDelete = async () => {
     await deleteFile(file._id);
     setShowDeleteConfirm(false);
@@ -81,11 +99,17 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
   if (viewMode === 'list') {
     return (
       <>
-        <div className="group flex items-center gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-xl transition-colors">
+        <div 
+          className="group flex items-center gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-xl transition-colors cursor-pointer"
+          onClick={handlePreview}
+        >
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center flex-shrink-0`}>
-              <IconComponent className="w-5 h-5 text-white" />
-            </div>
+            <FileTypeIcon 
+              mimeType={file.mimeType}
+              fileName={file.name}
+              className="w-6 h-6"
+              showBackground={true}
+            />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-gray-900 dark:text-white truncate">
                 {file.name}
@@ -116,11 +140,25 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
             {showMenu && (
               <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-100 dark:border-dark-700 py-1 z-10">
                 <button
+                  onClick={handlePreview}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                >
+                  <Eye className="w-4 h-4" />
+                  Preview
+                </button>
+                <button
                   onClick={handleDownload}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
                 >
                   <Download className="w-4 h-4" />
                   Download
+                </button>
+                <button
+                  onClick={handleQRShare}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                >
+                  <Share2 className="w-4 h-4" />
+                  QR Share
                 </button>
                 <button
                   onClick={() => {
@@ -172,7 +210,10 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
     <>
       <div className="group relative bg-white dark:bg-dark-800 rounded-2xl p-4 hover:shadow-lg dark:hover:shadow-dark-700/50 transition-all duration-200 border border-gray-100 dark:border-dark-700">
         {/* Preview area */}
-        <div className="aspect-square rounded-xl bg-gray-50 dark:bg-dark-700 flex items-center justify-center mb-3 overflow-hidden">
+        <div 
+          className="aspect-square rounded-xl bg-gray-50 dark:bg-dark-700 flex items-center justify-center mb-3 overflow-hidden cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors"
+          onClick={handlePreview}
+        >
           {fileType === 'image' && file.url ? (
             <img 
               src={file.url} 
@@ -180,20 +221,40 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center ${shadow} shadow-lg`}>
-              <IconComponent className="w-8 h-8 text-white" />
-            </div>
+            <FileTypeIcon 
+              mimeType={file.mimeType}
+              fileName={file.name}
+              className="w-12 h-12"
+              showBackground={true}
+            />
           )}
+          
+          {/* Preview overlay */}
+          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+            <Eye className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
         </div>
 
         {/* File info */}
         <div>
-          <p className="font-medium text-gray-900 dark:text-white truncate text-sm">
+          <p className="font-medium text-gray-900 dark:text-white truncate text-sm mb-2">
             {file.name}
           </p>
-          <p className="text-xs text-gray-500 mt-1">
-            {formatFileSize(file.size)}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-500">
+              {formatFileSize(file.size)}
+            </p>
+          </div>
+          
+          {/* Smart Tags */}
+          <SmartTags 
+            file={file} 
+            className="mt-2"
+            onTagClick={(tag) => {
+              // Could trigger search by this tag
+              console.log('Tag clicked:', tag);
+            }}
+          />
         </div>
 
         {/* Menu button */}
@@ -211,11 +272,25 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
           {showMenu && (
             <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-100 dark:border-dark-700 py-1 z-10">
               <button
+                onClick={handlePreview}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+              >
+                <Eye className="w-4 h-4" />
+                Preview
+              </button>
+              <button
                 onClick={handleDownload}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
               >
                 <Download className="w-4 h-4" />
                 Download
+              </button>
+              <button
+                onClick={handleQRShare}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+              >
+                <Share2 className="w-4 h-4" />
+                QR Share
               </button>
               <button
                 onClick={() => {
@@ -258,6 +333,18 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
         onClose={() => setShowRename(false)}
         item={file}
         type="file"
+      />
+
+      <FilePreview
+        file={file}
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+      />
+
+      <QRShare
+        file={file}
+        isOpen={showQRShare}
+        onClose={() => setShowQRShare(false)}
       />
     </>
   );

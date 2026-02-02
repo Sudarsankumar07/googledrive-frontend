@@ -19,6 +19,10 @@ import CreateFolderModal from './CreateFolderModal';
 import UploadProgress from './UploadProgress';
 import Button from '../common/Button';
 import fileService from '../../services/fileService';
+import AdvancedSearch from './AdvancedSearch';
+import AnalyticsWidget from './AnalyticsWidget';
+import ActivityFeed from './ActivityFeed';
+import StorageIndicator from './StorageIndicator';
 
 const Dashboard = () => {
   const { fileInputRef } = useOutletContext();
@@ -39,7 +43,14 @@ const Dashboard = () => {
   const [sortOrder, setSortOrder] = useState('asc');
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showSortMenu, setShowSortMenu] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearchActive, setIsSearchActive] = useState(false);
   const sortMenuRef = useRef(null);
+
+  const handleSearchResults = useCallback((results) => {
+    setSearchResults(results || []);
+    setIsSearchActive((results || []).length !== (files || []).length);
+  }, [files]);
 
   useEffect(() => {
     refreshFiles();
@@ -134,8 +145,9 @@ const Dashboard = () => {
     });
   };
 
-  const sortedFolders = sortItems(folders, 'folder');
-  const sortedFiles = sortItems(files, 'file');
+  const displayFiles = isSearchActive ? searchResults : (files || []);
+  const sortedFolders = sortItems(folders || [], 'folder');
+  const sortedFiles = sortItems(displayFiles, 'file');
 
   const sortOptions = [
     { value: 'name', label: 'Name' },
@@ -243,6 +255,22 @@ const Dashboard = () => {
             </Button>
           </div>
         </div>
+      </div>
+
+      {/* Advanced Search */}
+      <AdvancedSearch 
+        files={files || []} 
+        onSearchResults={handleSearchResults}
+        className="mb-6"
+      />
+
+      {/* Analytics & Activity Grid */}
+      <div className="grid gap-6 mb-6 lg:grid-cols-2">
+        <div className="space-y-6">
+          <AnalyticsWidget files={files || []} />
+          <StorageIndicator files={files || []} />
+        </div>
+        <ActivityFeed files={files || []} />
       </div>
 
       {/* Content */}

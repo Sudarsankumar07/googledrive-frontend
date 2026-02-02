@@ -55,7 +55,7 @@ const AuthLayout = ({ children, title, subtitle }) => {
 
           {/* Footer */}
           <p className="text-center text-sm text-gray-500 mt-8">
-            © 2024 CloudDrive. All rights reserved.
+            © 2026 CloudDrive. All rights reserved.
           </p>
         </div>
       </main>
