@@ -16,6 +16,7 @@ const FolderItem = ({ folder, viewMode = 'grid' }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRename, setShowRename] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -33,8 +34,16 @@ const FolderItem = ({ folder, viewMode = 'grid' }) => {
   };
 
   const handleDelete = async () => {
-    await deleteFolder(folder._id);
-    setShowDeleteConfirm(false);
+    setIsDeleting(true);
+    try {
+      await deleteFolder(folder._id);
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      console.error('Failed to delete folder:', error);
+      // Keep dialog open on error so user can retry
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   if (viewMode === 'list') {
@@ -115,12 +124,13 @@ const FolderItem = ({ folder, viewMode = 'grid' }) => {
 
         <ConfirmDialog
           isOpen={showDeleteConfirm}
-          onClose={() => setShowDeleteConfirm(false)}
+          onClose={() => !isDeleting && setShowDeleteConfirm(false)}
           onConfirm={handleDelete}
           title="Delete folder"
           message={`Are you sure you want to delete "${folder.name}"? This will also delete all files and subfolders inside.`}
           confirmText="Delete"
-          danger
+          variant="danger"
+          loading={isDeleting}
         />
 
         <RenameModal
@@ -163,7 +173,8 @@ const FolderItem = ({ folder, viewMode = 'grid' }) => {
           {showMenu && (
             <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-100 dark:border-dark-700 py-1 z-10">
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   handleOpen();
                   setShowMenu(false);
                 }}
@@ -173,7 +184,8 @@ const FolderItem = ({ folder, viewMode = 'grid' }) => {
                 Open
               </button>
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowRename(true);
                   setShowMenu(false);
                 }}
@@ -184,7 +196,8 @@ const FolderItem = ({ folder, viewMode = 'grid' }) => {
               </button>
               <hr className="my-1 border-gray-100 dark:border-dark-700" />
               <button
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setShowDeleteConfirm(true);
                   setShowMenu(false);
                 }}
@@ -200,12 +213,13 @@ const FolderItem = ({ folder, viewMode = 'grid' }) => {
 
       <ConfirmDialog
         isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
+        onClose={() => !isDeleting && setShowDeleteConfirm(false)}
         onConfirm={handleDelete}
         title="Delete folder"
         message={`Are you sure you want to delete "${folder.name}"? This will also delete all files and subfolders inside.`}
         confirmText="Delete"
-        danger
+        variant="danger"
+        loading={isDeleting}
       />
 
       <RenameModal

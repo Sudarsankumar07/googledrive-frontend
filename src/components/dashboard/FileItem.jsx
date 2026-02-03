@@ -52,10 +52,27 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
   const [showRename, setShowRename] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showQRShare, setShowQRShare] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState(null);
+  const [thumbnailLoading, setThumbnailLoading] = useState(false);
   const menuRef = useRef(null);
 
   const fileType = getFileType(file.mimeType);
   const { icon: IconComponent, gradient, shadow } = getFileIcon(fileType, file.mimeType);
+
+  // Load thumbnail for images
+  useEffect(() => {
+    if (fileType === 'image' && !thumbnailUrl && !thumbnailLoading) {
+      setThumbnailLoading(true);
+      fileService.downloadFile(file._id)
+        .then(result => {
+          if (result.success && result.data.downloadUrl) {
+            setThumbnailUrl(result.data.downloadUrl);
+          }
+        })
+        .catch(err => console.error('Failed to load thumbnail:', err))
+        .finally(() => setThumbnailLoading(false));
+    }
+  }, [file._id, fileType, thumbnailUrl, thumbnailLoading]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -211,26 +228,31 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
       <div className="group relative bg-white dark:bg-dark-800 rounded-2xl p-4 hover:shadow-lg dark:hover:shadow-dark-700/50 transition-all duration-200 border border-gray-100 dark:border-dark-700">
         {/* Preview area */}
         <div
-          className="aspect-square rounded-xl bg-gray-50 dark:bg-dark-700 flex items-center justify-center mb-3 overflow-hidden cursor-pointer hover:bg-gray-100 dark:hover:bg-dark-600 transition-colors"
+          className="relative aspect-square rounded-xl bg-gray-100 dark:bg-dark-700 flex items-center justify-center mb-3 overflow-hidden cursor-pointer hover:bg-gray-200 dark:hover:bg-dark-600 transition-colors"
           onClick={handlePreview}
         >
-          {fileType === 'image' && file.url ? (
+          {fileType === 'image' && thumbnailUrl ? (
             <img
-              src={file.url}
+              src={thumbnailUrl}
               alt={file.name}
               className="w-full h-full object-cover"
+              onError={() => setThumbnailUrl(null)}
             />
+          ) : fileType === 'image' && thumbnailLoading ? (
+            <div className="animate-pulse w-full h-full bg-gray-200 dark:bg-dark-600" />
           ) : (
-            <FileTypeIcon
-              mimeType={file.mimeType}
-              fileName={file.name}
-              className="w-12 h-12"
-              showBackground={true}
-            />
+            <div className="flex items-center justify-center">
+              <FileTypeIcon
+                mimeType={file.mimeType}
+                fileName={file.name}
+                className="w-12 h-12"
+                showBackground={true}
+              />
+            </div>
           )}
 
-          {/* Preview overlay */}
-          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-200 flex items-center justify-center">
+          {/* Hover overlay */}
+          <div className="absolute inset-0 bg-transparent group-hover:bg-black/20 transition-all duration-200 flex items-center justify-center pointer-events-none">
             <Eye className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </div>
