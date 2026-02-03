@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  HardDrive, 
-  Clock, 
-  Star, 
-  Trash2, 
+import {
+  HardDrive,
+  Clock,
+  Star,
+  Trash2,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -14,24 +14,29 @@ import {
   Cloud
 } from 'lucide-react';
 import { useFiles } from '../../context/FileContext';
+import { formatFileSize } from '../../utils/helpers';
+import { useStorageStats, getStorageColor } from '../../hooks/useStorageStats';
 
 const Sidebar = ({ isOpen, onToggle, onCreateFolder, onUpload }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentFolder } = useFiles();
 
+  // Fetch accurate storage stats from backend (counts ALL user files)
+  const { storageStats, loading } = useStorageStats(true); // Auto-refresh enabled
+
   const menuItems = [
     { icon: HardDrive, label: 'My Drive', path: '/dashboard', active: true },
-    { icon: Clock, label: 'Recent', path: '/dashboard/recent', disabled: true },
-    { icon: Star, label: 'Starred', path: '/dashboard/starred', disabled: true },
-    { icon: Trash2, label: 'Trash', path: '/dashboard/trash', disabled: true },
+    { icon: Clock, label: 'Recent', path: '/dashboard/recent' },
+    { icon: Star, label: 'Starred', path: '/dashboard/starred' },
+    { icon: Trash2, label: 'Trash', path: '/dashboard/trash' },
   ];
 
   return (
     <>
       {/* Mobile overlay */}
       {isOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onToggle}
         />
@@ -66,17 +71,17 @@ const Sidebar = ({ isOpen, onToggle, onCreateFolder, onUpload }) => {
               <Plus className="w-5 h-5" />
               <span>New</span>
             </button>
-            
+
             {/* Dropdown */}
             <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-100 dark:border-dark-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <button 
+              <button
                 onClick={onUpload}
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700 rounded-t-xl"
               >
                 <Upload className="w-4 h-4 text-primary-500" />
                 Upload File
               </button>
-              <button 
+              <button
                 onClick={onCreateFolder}
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700 rounded-b-xl"
               >
@@ -117,14 +122,38 @@ const Sidebar = ({ isOpen, onToggle, onCreateFolder, onUpload }) => {
         {/* Storage Info */}
         <div className="p-4 border-t border-gray-100 dark:border-dark-800">
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-dark-800 dark:to-dark-800 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Storage</span>
-              <span className="text-xs text-gray-500">Unlimited</span>
-            </div>
-            <div className="h-2 bg-gray-200 dark:bg-dark-700 rounded-full overflow-hidden">
-              <div className="h-full w-1/4 bg-gradient-to-r from-primary-500 to-purple-500 rounded-full" />
-            </div>
-            <p className="text-xs text-gray-500 mt-2">Using local storage</p>
+            {loading ? (
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 dark:bg-dark-700 rounded mb-3" />
+                <div className="h-2 bg-gray-200 dark:bg-dark-700 rounded" />
+              </div>
+            ) : storageStats ? (
+              <>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Storage</span>
+                  <span className="text-xs text-gray-500">
+                    {formatFileSize(storageStats.totalUsed)} / {formatFileSize(storageStats.storageLimit)}
+                  </span>
+                </div>
+                <div className="h-2 bg-gray-200 dark:bg-dark-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${getStorageColor(storageStats.usagePercentage).bar} rounded-full transition-all duration-300`}
+                    style={{ width: `${storageStats.usagePercentage}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-xs text-gray-500">
+                    {storageStats.fileCount} files
+                    {storageStats.trashCount > 0 && ` (${storageStats.trashCount} in trash)`}
+                  </p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    {storageStats.usagePercentage.toFixed(1)}%
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="text-xs text-gray-500 text-center">Unable to load storage</div>
+            )}
           </div>
         </div>
       </aside>

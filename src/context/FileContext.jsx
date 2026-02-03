@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import fileService from '../services/fileService';
 import folderService from '../services/folderService';
@@ -13,6 +13,17 @@ export const FileProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
+  const [highlightedFileId, setHighlightedFileId] = useState(null);
+
+  // Auto-clear highlight after 5 seconds
+  useEffect(() => {
+    if (highlightedFileId) {
+      const timer = setTimeout(() => {
+        setHighlightedFileId(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedFileId]);
 
   const refreshFiles = useCallback(async () => {
     setLoading(true);
@@ -105,6 +116,63 @@ export const FileProvider = ({ children }) => {
     }
   };
 
+  const toggleStar = async (fileId, currentStarred) => {
+    try {
+      // Optimistic update
+      setFiles(prev => prev.map(f =>
+        f._id === fileId ? { ...f, isStarred: !currentStarred } : f
+      ));
+
+      const response = await fileService.toggleStar(fileId, !currentStarred);
+
+      if (response.success) {
+        toast.success(response.message);
+      }
+    } catch (error) {
+      // Revert on error
+      setFiles(prev => prev.map(f =>
+        f._id === fileId ? { ...f, isStarred: currentStarred } : f
+      ));
+      toast.error('Failed to update star status');
+    }
+  };
+
+  const restoreFile = async (fileId) => {
+    try {
+      const response = await fileService.restoreFile(fileId);
+      if (response.success) {
+        toast.success('File restored successfully');
+        refreshFiles();
+      }
+    } catch (error) {
+      toast.error('Failed to restore file');
+    }
+  };
+
+  const permanentlyDeleteFile = async (fileId) => {
+    try {
+      const response = await fileService.permanentlyDeleteFile(fileId);
+      if (response.success) {
+        toast.success('File permanently deleted');
+        refreshFiles();
+      }
+    } catch (error) {
+      toast.error('Failed to delete file');
+    }
+  };
+
+  const emptyTrash = async () => {
+    try {
+      const response = await fileService.emptyTrash();
+      if (response.success) {
+        toast.success(`${response.deletedCount} items permanently deleted`);
+        refreshFiles();
+      }
+    } catch (error) {
+      toast.error('Failed to empty trash');
+    }
+  };
+
   const value = {
     files,
     folders,
@@ -119,7 +187,31 @@ export const FileProvider = ({ children }) => {
     setCurrentFolder,
     deleteFile,
     deleteFolder,
+    toggleStar,
+    restoreFile,
+    permanentlyDeleteFile,
+    emptyTrash,
+    navigateToFolder: async (folderId, highlightFileId = null) => {
+      // Set highlight if provided
+      if (highlightFileId) {
+        setHighlightedFileId(highlightFileId);
+      }
+
+      try {
+        if (folderId) {
+          await setCurrentFolder({ _id: folderId });
+        } else {
+          await setCurrentFolder(null);
+        }
+      } catch (error) {
+        console.error('Error navigating to folder:', error);
+        toast.error('Failed to navigate to folder');
+      }
+    },
+    highlightedFileId,
+    setHighlightedFileId,
   };
+
 
   return (
     <FileContext.Provider value={value}>

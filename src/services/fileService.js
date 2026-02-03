@@ -54,6 +54,56 @@ export const fileService = {
     const response = await api.get('/files/search', { params: { query } });
     return response.data;
   },
+
+  // Recent Files
+  getRecentFiles: async (limit = 50) => {
+    const response = await api.get('/files/recent', { params: { limit } });
+    return response.data;
+  },
+
+  // Starred Files
+  getStarredFiles: async () => {
+    const response = await api.get('/files/starred');
+    return response.data;
+  },
+
+  toggleStar: async (fileId, isStarred) => {
+    const response = await api.patch(`/files/${fileId}/star`, { isStarred });
+    return response.data;
+  },
+
+  // Trash Operations
+  getTrashFiles: async () => {
+    const response = await api.get('/files/trash');
+    return response.data;
+  },
+
+  restoreFile: async (fileId) => {
+    const response = await api.patch(`/files/${fileId}/restore`);
+    return response.data;
+  },
+
+  permanentlyDeleteFile: async (fileId) => {
+    const response = await api.delete(`/files/${fileId}/permanent`);
+    return response.data;
+  },
+
+  emptyTrash: async () => {
+    const response = await api.delete('/files/trash/empty');
+    return response.data;
+  },
+
+  // Storage Statistics
+  getStorageStats: async () => {
+    const response = await api.get('/files/storage-stats');
+    return response.data;
+  },
+
+  // Get all files (for analytics)
+  getAllFiles: async () => {
+    const response = await api.get('/files/all');
+    return response.data;
+  },
 };
 
 export default fileService;

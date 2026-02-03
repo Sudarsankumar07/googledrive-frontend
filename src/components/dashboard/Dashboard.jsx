@@ -23,6 +23,8 @@ import AdvancedSearch from './AdvancedSearch';
 import AnalyticsWidget from './AnalyticsWidget';
 import ActivityFeed from './ActivityFeed';
 import StorageIndicator from './StorageIndicator';
+import SmartSearchBar from '../ai/SmartSearchBar';
+import AIInsightsWidget from '../ai/AIInsightsWidget';
 
 const Dashboard = () => {
   const { fileInputRef } = useOutletContext();
@@ -280,6 +282,7 @@ const Dashboard = () => {
       </div>
 
       {/* Advanced Search */}
+      <SmartSearchBar className="mb-6" />
       <AdvancedSearch
         files={files || []}
         folders={folders || []}
@@ -292,6 +295,7 @@ const Dashboard = () => {
         <div className="space-y-6">
           <AnalyticsWidget files={files || []} />
           <StorageIndicator files={files || []} />
+          <AIInsightsWidget />
         </div>
         <ActivityFeed files={files || []} />
       </div>

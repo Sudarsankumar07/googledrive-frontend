@@ -7,12 +7,14 @@ import {
   FileArchive,
   FileCode,
   File,
+  Sparkles,
   MoreVertical,
   Download,
   Trash2,
   Edit2,
   Eye,
-  Share2
+  Share2,
+  Star
 } from 'lucide-react';
 import { formatDate, formatFileSize, getFileType } from '../../utils/helpers';
 import { generateFileTags } from '../../utils/fileUtils';
@@ -25,6 +27,7 @@ import FileTypeIcon from '../common/FileTypeIcon';
 import SmartTags from '../common/SmartTags';
 import fileService from '../../services/fileService';
 import { toast } from 'react-toastify';
+import { useAI } from '../../context/AIContext';
 
 const getFileIcon = (type, mimeType) => {
   switch (type) {
@@ -45,8 +48,9 @@ const getFileIcon = (type, mimeType) => {
   }
 };
 
-const FileItem = ({ file, viewMode = 'grid' }) => {
-  const { deleteFile } = useFiles();
+const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
+  const { deleteFile, toggleStar } = useFiles();
+  const { openChat } = useAI();
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRename, setShowRename] = useState(false);
@@ -55,9 +59,17 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
   const [thumbnailUrl, setThumbnailUrl] = useState(null);
   const [thumbnailLoading, setThumbnailLoading] = useState(false);
   const menuRef = useRef(null);
+  const itemRef = useRef(null);
 
   const fileType = getFileType(file.mimeType);
   const { icon: IconComponent, gradient, shadow } = getFileIcon(fileType, file.mimeType);
+
+  // Scroll to item if highlighted
+  useEffect(() => {
+    if (isHighlighted && itemRef.current) {
+      itemRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isHighlighted]);
 
   // Load thumbnail for images
   useEffect(() => {
@@ -103,6 +115,11 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
     setShowMenu(false);
   };
 
+  const handleAskAI = () => {
+    openChat({ context: { selectedFiles: [file._id] } });
+    setShowMenu(false);
+  };
+
   const handleQRShare = () => {
     setShowQRShare(true);
     setShowMenu(false);
@@ -117,7 +134,11 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
     return (
       <>
         <div
-          className="group flex items-center gap-4 px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-800 rounded-xl transition-colors cursor-pointer"
+          ref={itemRef}
+          className={`group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-500 cursor-pointer ${isHighlighted
+            ? 'bg-primary-50 dark:bg-primary-900/30 ring-2 ring-primary-500 shadow-md z-10 relative my-1'
+            : 'hover:bg-gray-50 dark:hover:bg-dark-800'
+            }`}
           onClick={handlePreview}
         >
           <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -131,7 +152,10 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
               <p className="font-medium text-gray-900 dark:text-white truncate">
                 {file.name}
               </p>
-              <p className="text-xs text-gray-500 capitalize">{fileType}</p>
+              <p className="text-xs text-gray-500 capitalize truncate">
+                {fileType}
+                {file.aiSummary ? ` • ${file.aiSummary}` : ''}
+              </p>
             </div>
           </div>
 
@@ -142,6 +166,23 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
           <span className="text-sm text-gray-500 hidden lg:block w-24">
             {formatFileSize(file.size)}
           </span>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleStar(file._id, file.isStarred);
+            }}
+            className={`p-2 rounded-lg transition-colors ${file.isStarred
+              ? 'text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
+              : 'text-gray-400 hover:text-yellow-500 hover:bg-gray-100 dark:hover:bg-dark-700 opacity-0 group-hover:opacity-100'
+              }`}
+            title={file.isStarred ? 'Unstar' : 'Star'}
+          >
+            <Star
+              className="w-5 h-5"
+              fill={file.isStarred ? 'currentColor' : 'none'}
+            />
+          </button>
 
           <div className="relative" ref={menuRef}>
             <button
@@ -156,6 +197,13 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
 
             {showMenu && (
               <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-100 dark:border-dark-700 py-1 z-10">
+                <button
+                  onClick={handleAskAI}
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Ask AI
+                </button>
                 <button
                   onClick={handlePreview}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
@@ -225,7 +273,13 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
 
   return (
     <>
-      <div className="group relative bg-white dark:bg-dark-800 rounded-2xl p-4 hover:shadow-lg dark:hover:shadow-dark-700/50 transition-all duration-200 border border-gray-100 dark:border-dark-700">
+      <div
+        ref={itemRef}
+        className={`group relative bg-white dark:bg-dark-800 rounded-2xl p-4 transition-all duration-500 border ${isHighlighted
+            ? 'ring-4 ring-primary-500/50 shadow-xl scale-105 z-10 border-primary-500'
+            : 'hover:shadow-lg dark:hover:shadow-dark-700/50 border-gray-100 dark:border-dark-700'
+          }`}
+      >
         {/* Preview area */}
         <div
           className="relative aspect-square rounded-xl bg-gray-100 dark:bg-dark-700 flex items-center justify-center mb-3 overflow-hidden cursor-pointer hover:bg-gray-200 dark:hover:bg-dark-600 transition-colors"
@@ -267,6 +321,11 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
               {formatFileSize(file.size)}
             </p>
           </div>
+          {file.aiSummary && (
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 truncate">
+              {file.aiSummary}
+            </p>
+          )}
 
           {/* Smart Tags */}
           <SmartTags
@@ -278,8 +337,25 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
           />
         </div>
 
-        {/* Menu button */}
-        <div className="absolute top-2 right-2" ref={menuRef}>
+        {/* Star and Menu buttons */}
+        <div className="absolute top-2 right-2 flex gap-1" ref={menuRef}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleStar(file._id, file.isStarred);
+            }}
+            className={`p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm ${file.isStarred
+              ? 'text-yellow-500 hover:bg-white/80 dark:hover:bg-dark-700 opacity-100'
+              : 'text-gray-400 hover:text-yellow-500 hover:bg-white/80 dark:hover:bg-dark-700'
+              }`}
+            title={file.isStarred ? 'Unstar' : 'Star'}
+          >
+            <Star
+              className="w-4 h-4"
+              fill={file.isStarred ? 'currentColor' : 'none'}
+            />
+          </button>
+
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -292,6 +368,13 @@ const FileItem = ({ file, viewMode = 'grid' }) => {
 
           {showMenu && (
             <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-100 dark:border-dark-700 py-1 z-10">
+              <button
+                onClick={handleAskAI}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+              >
+                <Sparkles className="w-4 h-4" />
+                Ask AI
+              </button>
               <button
                 onClick={handlePreview}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"

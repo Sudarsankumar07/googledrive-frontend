@@ -1,65 +1,26 @@
-import { useMemo } from 'react';
-import { HardDrive, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { HardDrive } from 'lucide-react';
 import { formatFileSize } from '../../utils/fileUtils';
+import { useStorageData, getProgressBarColor } from '../../hooks/useStorageData';
+import { useStorageStats, getStorageColor } from '../../hooks/useStorageStats';
 
-const StorageIndicator = ({ 
-  files = [], 
+const StorageIndicator = ({
+  files = [],
   totalSpaceLimit = 5 * 1024 * 1024 * 1024, // 5GB default
   className = ''
 }) => {
-  const storageData = useMemo(() => {
-    const usedSpace = files.reduce((sum, file) => sum + (file.size || 0), 0);
-    const percentage = totalSpaceLimit > 0 ? (usedSpace / totalSpaceLimit) * 100 : 0;
-    const remainingSpace = totalSpaceLimit - usedSpace;
-    
-    // Determine status
-    let status = 'normal';
-    let statusIcon = CheckCircle;
-    let statusColor = 'text-green-500';
-    let statusBg = 'bg-green-100 dark:bg-green-900';
-    let message = 'You have plenty of storage space';
-    
-    if (percentage >= 90) {
-      status = 'critical';
-      statusIcon = AlertTriangle;
-      statusColor = 'text-red-500';
-      statusBg = 'bg-red-100 dark:bg-red-900';
-      message = 'Storage almost full! Consider upgrading or cleaning up files';
-    } else if (percentage >= 75) {
-      status = 'warning';
-      statusIcon = AlertTriangle;
-      statusColor = 'text-amber-500';
-      statusBg = 'bg-amber-100 dark:bg-amber-900';
-      message = 'Storage getting full. Consider managing your files';
-    } else if (percentage >= 50) {
-      status = 'info';
-      statusIcon = Info;
-      statusColor = 'text-blue-500';
-      statusBg = 'bg-blue-100 dark:bg-blue-900';
-      message = 'You\'re using a moderate amount of storage';
-    }
+  // Use backend storage stats for ACCURATE total (all user files)
+  const { storageStats, loading } = useStorageStats(false);
 
-    return {
-      usedSpace,
-      totalSpaceLimit,
-      remainingSpace,
-      percentage: Math.min(percentage, 100),
-      status,
-      statusIcon,
-      statusColor,
-      statusBg,
-      message
-    };
-  }, [files, totalSpaceLimit]);
+  // Fallback to local calculation if backend data not available
+  const localStorageData = useStorageData(files, totalSpaceLimit);
 
-  const getProgressBarColor = () => {
-    if (storageData.percentage >= 90) return 'bg-red-500';
-    if (storageData.percentage >= 75) return 'bg-amber-500';
-    if (storageData.percentage >= 50) return 'bg-blue-500';
-    return 'bg-green-500';
-  };
+  // Use backend data if available, otherwise use local calculation
+  const usedSpace = storageStats?.totalUsed ?? localStorageData.usedSpace;
+  const percentage = storageStats?.usagePercentage ?? localStorageData.percentage;
+  const remainingSpace = storageStats ? (storageStats.storageLimit - storageStats.totalUsed) : localStorageData.remainingSpace;
+  const actualLimit = storageStats?.storageLimit ?? totalSpaceLimit;
 
-  const StatusIcon = storageData.statusIcon;
+  const StatusIcon = localStorageData.statusIcon;
 
   return (
     <div className={`card p-6 ${className}`}>
@@ -68,8 +29,8 @@ const StorageIndicator = ({
           <HardDrive className="w-5 h-5 text-primary-500" />
           Storage Usage
         </h3>
-        <div className={`p-2 rounded-full ${storageData.statusBg}`}>
-          <StatusIcon className={`w-4 h-4 ${storageData.statusColor}`} />
+        <div className={`p-2 rounded-full ${localStorageData.statusBg}`}>
+          <StatusIcon className={`w-4 h-4 ${localStorageData.statusColor}`} />
         </div>
       </div>
 
@@ -79,21 +40,21 @@ const StorageIndicator = ({
         <div className="flex justify-between text-sm">
           <span className="text-gray-600 dark:text-gray-400">Used Space</span>
           <span className="font-medium text-gray-800 dark:text-white">
-            {formatFileSize(storageData.usedSpace)} / {formatFileSize(storageData.totalSpaceLimit)}
+            {formatFileSize(usedSpace)} / {formatFileSize(actualLimit)}
           </span>
         </div>
 
         {/* Progress Bar */}
         <div className="relative">
           <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-            <div 
-              className={`h-full transition-all duration-500 ease-out ${getProgressBarColor()}`}
-              style={{ width: `${storageData.percentage}%` }}
+            <div
+              className={`h-full transition-all duration-500 ease-out ${getProgressBarColor(percentage)}`}
+              style={{ width: `${percentage}%` }}
             />
           </div>
           <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
             <span>0%</span>
-            <span className="font-medium">{storageData.percentage.toFixed(1)}%</span>
+            <span className="font-medium">{percentage.toFixed(1)}%</span>
             <span>100%</span>
           </div>
         </div>
@@ -102,35 +63,39 @@ const StorageIndicator = ({
         <div className="flex justify-between text-sm">
           <span className="text-gray-600 dark:text-gray-400">Available</span>
           <span className="font-medium text-gray-800 dark:text-white">
-            {formatFileSize(Math.max(0, storageData.remainingSpace))}
+            {formatFileSize(Math.max(0, remainingSpace))}
           </span>
         </div>
 
         {/* Status Message */}
-        <div className={`p-3 rounded-lg ${storageData.statusBg}`}>
-          <p className={`text-sm ${storageData.statusColor} font-medium`}>
-            {storageData.message}
+        <div className={`p-3 rounded-lg ${localStorageData.statusBg}`}>
+          <p className={`text-sm ${localStorageData.statusColor} font-medium`}>
+            {localStorageData.message}
           </p>
         </div>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
           <div className="text-center">
-            <p className="text-lg font-bold text-gray-800 dark:text-white">{files.length}</p>
+            <p className="text-lg font-bold text-gray-800 dark:text-white">
+              {storageStats?.fileCount ?? files.length}
+            </p>
             <p className="text-xs text-gray-500">Total Files</p>
           </div>
           <div className="text-center">
             <p className="text-lg font-bold text-gray-800 dark:text-white">
-              {files.length > 0 ? formatFileSize(storageData.usedSpace / files.length) : '0 B'}
+              {(storageStats?.fileCount && storageStats?.fileCount > 0)
+                ? formatFileSize(usedSpace / storageStats.fileCount)
+                : (files.length > 0 ? formatFileSize(usedSpace / files.length) : '0 B')}
             </p>
             <p className="text-xs text-gray-500">Avg. Size</p>
           </div>
         </div>
 
         {/* Action Buttons */}
-        {storageData.status !== 'normal' && (
+        {localStorageData.status !== 'normal' && (
           <div className="pt-3 space-y-2">
-            {storageData.status === 'critical' && (
+            {localStorageData.status === 'critical' && (
               <button className="btn-primary w-full text-sm">
                 Upgrade Storage Plan
               </button>

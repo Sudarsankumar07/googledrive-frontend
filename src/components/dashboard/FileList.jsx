@@ -3,8 +3,11 @@ import FolderItem from './FolderItem';
 import FileItem from './FileItem';
 import Loader from '../common/Loader';
 import EmptyState from '../common/EmptyState';
+import { useFiles } from '../../context/FileContext';
 
 const FileList = ({ folders, files, viewMode, loading }) => {
+  const { highlightedFileId } = useFiles();
+
   if (loading) {
     return <Loader />;
   }
@@ -48,7 +51,12 @@ const FileList = ({ folders, files, viewMode, loading }) => {
         {files.length > 0 && (
           <div className="divide-y divide-gray-50 dark:divide-dark-800">
             {files.map((file) => (
-              <FileItem key={file._id} file={file} viewMode="list" />
+              <FileItem
+                key={file._id}
+                file={file}
+                viewMode="list"
+                isHighlighted={file._id === highlightedFileId}
+              />
             ))}
           </div>
         )}
@@ -82,7 +90,12 @@ const FileList = ({ folders, files, viewMode, loading }) => {
           </h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {files.map((file) => (
-              <FileItem key={file._id} file={file} viewMode="grid" />
+              <FileItem
+                key={file._id}
+                file={file}
+                viewMode="grid"
+                isHighlighted={file._id === highlightedFileId}
+              />
             ))}
           </div>
         </div>

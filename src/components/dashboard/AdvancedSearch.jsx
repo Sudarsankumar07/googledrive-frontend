@@ -1,9 +1,20 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Search, Filter, X, File, Calendar, HardDrive, FileType } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Filter, X, File, Calendar, HardDrive, FileType, Folder } from 'lucide-react';
 import Fuse from 'fuse.js';
-import { filterFiles, getFileType } from '../../utils/fileUtils';
+import { filterFiles } from '../../utils/fileUtils';
+import { useFiles } from '../../context/FileContext';
+
+const DEFAULT_FILTERS = {
+  type: 'all',
+  size: 'any',
+  dateRange: 'any',
+  extension: 'any'
+};
 
 const AdvancedSearch = ({ files = [], folders = [], onSearchResults = () => { }, className = '' }) => {
+  const navigate = useNavigate();
+  const { currentFolder, navigateToFolder, setCurrentFolder, setHighlightedFileId } = useFiles();
   const [query, setQuery] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState({
@@ -54,13 +65,26 @@ const AdvancedSearch = ({ files = [], folders = [], onSearchResults = () => { },
 
   // Generate search suggestions
   useEffect(() => {
-    if (!query.trim() || !files || !files.length) {
+    if (!query.trim() || ((!files || !files.length) && (!folders || !folders.length))) {
       setSuggestions([]);
       return;
     }
 
     const queryLower = query.toLowerCase();
     const newSuggestions = [];
+
+    // Folder name suggestions
+    const folderMatches = (folders || [])
+      .filter(folder => folder?.name && folder.name.toLowerCase().includes(queryLower))
+      .slice(0, 2)
+      .map(folder => ({
+        type: 'folder',
+        text: folder.name,
+        icon: Folder,
+        itemId: folder._id,
+        parentId: folder.parentId || null,
+        item: folder
+      }));
 
     // File name suggestions
     const nameMatches = files
@@ -69,7 +93,9 @@ const AdvancedSearch = ({ files = [], folders = [], onSearchResults = () => { },
       .map(file => ({
         type: 'file',
         text: file.name,
-        icon: File
+        icon: File,
+        itemId: file._id,
+        parentId: file.parentId || null
       }));
 
     // File type suggestions  
@@ -93,9 +119,9 @@ const AdvancedSearch = ({ files = [], folders = [], onSearchResults = () => { },
         filter: { extension: ext }
       }));
 
-    newSuggestions.push(...nameMatches, ...typeMatches, ...extMatches);
+    newSuggestions.push(...folderMatches, ...nameMatches, ...typeMatches, ...extMatches);
     setSuggestions(newSuggestions.slice(0, 5));
-  }, [query, files, availableExtensions]);
+  }, [query, files, folders, availableExtensions]);
 
   // Check if any filters are active (moved before useMemo that uses it)
   const hasActiveFilters = () => {
@@ -181,17 +207,45 @@ const AdvancedSearch = ({ files = [], folders = [], onSearchResults = () => { },
   };
 
   // Handle suggestion click
-  const handleSuggestionClick = (suggestion) => {
-    if (suggestion.type === 'file') {
-      setQuery(suggestion.text);
-    } else if (suggestion.type === 'filter') {
+  const handleSuggestionClick = async (suggestion) => {
+    setShowSuggestions(false);
+    addToRecentSearches(suggestion.text);
+
+    if (suggestion.type === 'filter') {
       setFilters(prev => ({ ...prev, ...suggestion.filter }));
       setQuery('');
+      return;
     }
-    setShowSuggestions(false);
 
-    // Add to recent searches
-    addToRecentSearches(suggestion.text);
+    // For navigation suggestions (file/folder), reset filters so the item is visible in context.
+    setQuery('');
+    setFilters(DEFAULT_FILTERS);
+    setIsFilterOpen(false);
+
+    navigate('/dashboard');
+
+    if (suggestion.type === 'folder' && suggestion.item) {
+      setCurrentFolder(suggestion.item);
+      return;
+    }
+
+    if (suggestion.type === 'folder' && suggestion.itemId) {
+      await navigateToFolder(suggestion.itemId);
+      return;
+    }
+
+    if (suggestion.type === 'file' && suggestion.itemId) {
+      const currentFolderId = currentFolder?._id || null;
+      const parentId = suggestion.parentId || null;
+
+      // If we're already in the correct folder, just highlight & scroll.
+      if (parentId === currentFolderId) {
+        setHighlightedFileId(suggestion.itemId);
+        return;
+      }
+
+      await navigateToFolder(parentId, suggestion.itemId);
+    }
   };
 
   // Add to recent searches
@@ -205,12 +259,7 @@ const AdvancedSearch = ({ files = [], folders = [], onSearchResults = () => { },
   // Clear all filters
   const clearAllFilters = () => {
     setQuery('');
-    setFilters({
-      type: 'all',
-      size: 'any',
-      dateRange: 'any',
-      extension: 'any'
-    });
+    setFilters(DEFAULT_FILTERS);
     setShowSuggestions(false);
   };
 

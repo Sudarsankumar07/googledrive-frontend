@@ -48,6 +48,11 @@ export const authService = {
     return response.data;
   },
 
+  updateProfile: async (profileData) => {
+    const response = await api.patch('/auth/me', profileData);
+    return response.data;
+  },
+
   isAuthenticated: () => {
     return !!localStorage.getItem('token');
   },

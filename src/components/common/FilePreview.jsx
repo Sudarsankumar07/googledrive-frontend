@@ -2,15 +2,24 @@ import { useState, useEffect } from 'react';
 import { X, Download, Eye, ZoomIn, ZoomOut } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { toast } from 'react-toastify';
 import { isImageFile, isTextFile, getFileType } from '../../utils/fileUtils';
 import fileService from '../../services/fileService';
+import aiService from '../../services/aiService';
+import { useAI } from '../../context/AIContext';
+import FileSummaryCard from '../ai/FileSummaryCard';
 
 const FilePreview = ({ file, onClose, isOpen }) => {
+  const { openChat } = useAI();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imageZoom, setImageZoom] = useState(1);
   const [textContent, setTextContent] = useState('');
   const [downloadUrl, setDownloadUrl] = useState(null);
+  const [aiSummary, setAiSummary] = useState(null);
+  const [aiKeyPoints, setAiKeyPoints] = useState([]);
+  const [aiTags, setAiTags] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !file) return;
@@ -19,6 +28,9 @@ const FilePreview = ({ file, onClose, isOpen }) => {
     setError(null);
     setImageZoom(1);
     setDownloadUrl(null);
+    setAiSummary(file.aiSummary || null);
+    setAiKeyPoints(Array.isArray(file.aiKeyPoints) ? file.aiKeyPoints : []);
+    setAiTags(Array.isArray(file.aiTags) ? file.aiTags : []);
 
     // Fetch download URL first
     fetchDownloadUrl();
@@ -213,6 +225,32 @@ const FilePreview = ({ file, onClose, isOpen }) => {
     return renderDefaultPreview();
   };
 
+  const handleGenerateSummary = async () => {
+    if (!file?._id) return;
+
+    setAiLoading(true);
+    try {
+      const response = await aiService.summarizeFile(file._id);
+      if (response?.success) {
+        setAiSummary(response?.data?.summary || null);
+        setAiKeyPoints(Array.isArray(response?.data?.keyPoints) ? response.data.keyPoints : []);
+        setAiTags(Array.isArray(response?.data?.suggestedTags) ? response.data.suggestedTags : []);
+        toast.success(response.data.cached ? 'Loaded cached summary' : 'Summary generated');
+      } else {
+        toast.error(response?.message || 'Failed to generate summary');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to generate summary');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleAskAI = () => {
+    if (!file?._id) return;
+    openChat({ context: { selectedFiles: [file._id] } });
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -253,8 +291,16 @@ const FilePreview = ({ file, onClose, isOpen }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-auto max-h-[calc(90vh-120px)]">
+        <div className="p-6 overflow-auto max-h-[calc(90vh-120px)] space-y-6">
           {renderContent()}
+          <FileSummaryCard
+            summary={aiSummary}
+            keyPoints={aiKeyPoints}
+            tags={aiTags}
+            loading={aiLoading}
+            onGenerate={handleGenerateSummary}
+            onAskAI={handleAskAI}
+          />
         </div>
       </div>
     </div>

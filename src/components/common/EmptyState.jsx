@@ -4,7 +4,9 @@ import Button from './Button';
 const EmptyState = ({ 
   type = 'empty', 
   title, 
-  description, 
+  description,
+  message,
+  icon: CustomIcon,
   action, 
   onAction 
 }) => {
@@ -15,7 +17,7 @@ const EmptyState = ({
     upload: Upload,
   };
 
-  const Icon = icons[type] || icons.empty;
+  const Icon = CustomIcon || icons[type] || icons.empty;
 
   const defaultContent = {
     empty: {
@@ -43,7 +45,7 @@ const EmptyState = ({
         {title || content.title}
       </h3>
       <p className="text-gray-500 dark:text-gray-400 text-center max-w-sm mb-6">
-        {description || content.description}
+        {description || message || content.description}
       </p>
       {action && onAction && (
         <Button onClick={onAction} icon={Upload}>

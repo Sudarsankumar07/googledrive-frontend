@@ -9,7 +9,7 @@ const SmartTags = ({ file, onTagClick, onTagRemove, className = '' }) => {
   }, [file]);
   
   // Combine auto-generated tags with any custom tags
-  const allTags = [...autoTags, ...(file.customTags || [])];
+  const allTags = [...autoTags, ...(file.aiTags || []), ...(file.customTags || [])];
   const uniqueTags = [...new Set(allTags)];
 
   const getTagColor = (tag) => {

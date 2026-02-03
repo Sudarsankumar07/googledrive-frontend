@@ -10,6 +10,12 @@ import ActivateAccount from '../auth/ActivateAccount';
 // Dashboard components
 import DashboardLayout from '../layout/DashboardLayout';
 import Dashboard from '../dashboard/Dashboard';
+import RecentView from '../dashboard/RecentView';
+import StarredView from '../dashboard/StarredView';
+import TrashView from '../dashboard/TrashView';
+import ProfileView from '../dashboard/ProfileView';
+import SettingsView from '../dashboard/SettingsView';
+import NotificationsView from '../dashboard/NotificationsView';
 
 // Route guards
 import ProtectedRoute from './ProtectedRoute';
@@ -66,6 +72,12 @@ const AppRoutes = () => {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="recent" element={<RecentView />} />
+        <Route path="starred" element={<StarredView />} />
+        <Route path="trash" element={<TrashView />} />
+        <Route path="profile" element={<ProfileView />} />
+        <Route path="settings" element={<SettingsView />} />
+        <Route path="notifications" element={<NotificationsView />} />
       </Route>
 
       {/* Redirects */}
