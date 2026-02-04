@@ -20,6 +20,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useFiles } from '../../context/FileContext';
 import { useAI } from '../../context/AIContext';
 import fileService from '../../services/fileService';
+import AppIcon from '../common/Icon';
 
 const Header = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
@@ -113,13 +114,15 @@ const Header = ({ onMenuClick }) => {
             onClick={onMenuClick}
             className="p-2 rounded-xl text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-800 lg:hidden"
           >
-            <Menu className="w-6 h-6" />
+            <AppIcon symbol="menu" fallback={Menu} size={24} />
           </button>
 
           {/* Search */}
           <div className="relative" ref={searchRef}>
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                <AppIcon symbol="search" fallback={Search} size={20} />
+              </span>
               <input
                 type="text"
                 placeholder="Search files and folders..."
@@ -158,7 +161,12 @@ const Header = ({ onMenuClick }) => {
                     </div>
 
                     {/* Navigation Arrow */}
-                    <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 flex-shrink-0" />
+                    <AppIcon
+                      symbol="chevron_right"
+                      fallback={ChevronRight}
+                      size={16}
+                      className="text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 flex-shrink-0"
+                    />
                   </button>
                 ))}
               </div>
@@ -173,11 +181,11 @@ const Header = ({ onMenuClick }) => {
             onClick={toggleDarkMode}
             className="p-2.5 rounded-xl text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-800 transition-colors"
           >
-            {darkMode ? (
-              <Sun className="w-5 h-5" />
-            ) : (
-              <Moon className="w-5 h-5" />
-            )}
+            <AppIcon
+              symbol={darkMode ? 'light_mode' : 'dark_mode'}
+              fallback={darkMode ? Sun : Moon}
+              size={20}
+            />
           </button>
 
           {/* AI Assistant */}
@@ -187,7 +195,7 @@ const Header = ({ onMenuClick }) => {
             className="p-2.5 rounded-xl text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-800 transition-colors"
             title="AI Assistant"
           >
-            <Sparkles className="w-5 h-5" />
+            <AppIcon symbol="auto_awesome" fallback={Sparkles} size={20} />
           </button>
 
           {/* Notifications */}
@@ -197,7 +205,7 @@ const Header = ({ onMenuClick }) => {
             className="p-2.5 rounded-xl text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-800 transition-colors relative"
             title="Notifications"
           >
-            <Bell className="w-5 h-5" />
+            <AppIcon symbol="notifications" fallback={Bell} size={20} />
             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
           </button>
 
@@ -207,7 +215,7 @@ const Header = ({ onMenuClick }) => {
               onClick={() => setShowDropdown(!showDropdown)}
               className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-dark-800 transition-colors"
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white font-medium shadow-lg shadow-primary-500/30">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center text-white font-medium shadow-lg shadow-primary-500/25">
                 {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
               </div>
               <div className="hidden md:block text-left">
@@ -216,7 +224,9 @@ const Header = ({ onMenuClick }) => {
                 </p>
                 <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
-              <ChevronDown className="w-4 h-4 text-gray-400 hidden md:block" />
+              <span className="hidden md:block text-gray-400">
+                <AppIcon symbol="expand_more" fallback={ChevronDown} size={16} />
+              </span>
             </button>
 
             {/* Dropdown */}

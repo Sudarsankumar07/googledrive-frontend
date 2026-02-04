@@ -146,7 +146,7 @@ const ActivityFeed = ({ files = [], className = '' }) => {
       
       {/* Footer */}
       <div className="p-4 bg-gray-50 dark:bg-gray-800 text-center">
-        <button className="text-sm text-brand-500 hover:text-brand-600 font-medium transition-colors">
+        <button className="text-sm text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium transition-colors">
           View All Activity
         </button>
       </div>

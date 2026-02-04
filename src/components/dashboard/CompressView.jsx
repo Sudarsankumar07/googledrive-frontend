@@ -61,14 +61,32 @@ const CompressView = () => {
       <div className="card p-6 space-y-4">
         <div>
           <div className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Choose file</div>
-          <input
-            type="file"
-            onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-            className="block w-full text-sm text-gray-700 dark:text-gray-200"
-          />
+          <div className="relative">
+            <input
+              type="file"
+              id="file-upload"
+              onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+              className="hidden"
+            />
+            <label
+              htmlFor="file-upload"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 text-white font-medium rounded-lg cursor-pointer transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Archive className="w-5 h-5" />
+              {selectedFile ? 'Change File' : 'Select File to Compress'}
+            </label>
+          </div>
           {selectedFile && (
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Selected: {selectedFile.name} ({Math.round((selectedFile.size / 1024) * 10) / 10} KB)
+            <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <div className="text-sm font-medium text-green-800 dark:text-green-200">
+                  Selected: {selectedFile.name}
+                </div>
+              </div>
+              <div className="text-xs text-green-600 dark:text-green-400 mt-1 ml-4">
+                Size: {Math.round((selectedFile.size / 1024) * 10) / 10} KB
+              </div>
             </div>
           )}
         </div>

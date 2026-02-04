@@ -36,7 +36,7 @@ const UploadProgress = ({ progress }) => {
         {/* Progress bar */}
         <div className="h-2 bg-gray-100 dark:bg-dark-700 rounded-full overflow-hidden">
           <div 
-            className="h-full bg-gradient-to-r from-primary-500 to-purple-500 rounded-full transition-all duration-300"
+            className="h-full bg-gradient-to-r from-primary-500 to-primary-600 rounded-full transition-all duration-300"
             style={{ width: `${percentage}%` }}
           />
         </div>

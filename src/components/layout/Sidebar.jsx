@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   HardDrive,
@@ -14,9 +14,12 @@ import {
   FolderPlus,
   Cloud
 } from 'lucide-react';
+import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react';
 import { useFiles } from '../../context/FileContext';
 import { formatFileSize } from '../../utils/helpers';
 import { useStorageStats, getStorageColor } from '../../hooks/useStorageStats';
+import Button from '../common/Button';
+import AppIcon from '../common/Icon';
 
 const Sidebar = ({ isOpen, onToggle, onCreateFolder, onUpload }) => {
   const navigate = useNavigate();
@@ -58,40 +61,66 @@ const Sidebar = ({ isOpen, onToggle, onCreateFolder, onUpload }) => {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-100 dark:border-dark-800">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg shadow-primary-500/30">
-            <Cloud className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/25">
+            <AppIcon symbol="cloud" fallback={Cloud} size={24} className="text-white" />
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
+          <span className="text-xl font-bold bg-gradient-to-r from-primary-700 to-primary-500 bg-clip-text text-transparent">
             CloudDrive
           </span>
         </div>
 
         {/* New Button */}
         <div className="p-4">
-          <div className="relative group">
-            <button className="w-full btn-primary py-3 rounded-xl flex items-center justify-center gap-2 group">
-              <Plus className="w-5 h-5" />
-              <span>New</span>
-            </button>
+          <Menu as="div" className="relative">
+            <MenuButton
+              as={Button}
+              type="button"
+              variant="primary"
+              className="w-full py-3"
+            >
+              <span className="flex items-center justify-center gap-2">
+                <AppIcon symbol="add" fallback={Plus} size={20} />
+                <span>New</span>
+              </span>
+            </MenuButton>
 
-            {/* Dropdown */}
-            <div className="absolute left-0 right-0 mt-2 bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-100 dark:border-dark-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-              <button
-                onClick={onUpload}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700 rounded-t-xl"
-              >
-                <Upload className="w-4 h-4 text-primary-500" />
-                Upload File
-              </button>
-              <button
-                onClick={onCreateFolder}
-                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700 rounded-b-xl"
-              >
-                <FolderPlus className="w-4 h-4 text-yellow-500" />
-                New Folder
-              </button>
-            </div>
-          </div>
+            <Transition
+              as={Fragment}
+              enter="transition ease-out duration-150"
+              enterFrom="transform opacity-0 -translate-y-1"
+              enterTo="transform opacity-100 translate-y-0"
+              leave="transition ease-in duration-120"
+              leaveFrom="transform opacity-100 translate-y-0"
+              leaveTo="transform opacity-0 -translate-y-1"
+            >
+              <MenuItems className="absolute left-0 right-0 mt-2 bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-100 dark:border-dark-700 overflow-hidden z-50 focus:outline-none">
+                <MenuItem>
+                  {({ active }) => (
+                    <button
+                      type="button"
+                      onClick={onUpload}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 ${active ? 'bg-gray-50 dark:bg-dark-700' : ''}`}
+                    >
+                      <AppIcon symbol="upload" fallback={Upload} size={18} className="text-primary-600 dark:text-primary-400" />
+                      Upload File
+                    </button>
+                  )}
+                </MenuItem>
+                <MenuItem>
+                  {({ active }) => (
+                    <button
+                      type="button"
+                      onClick={onCreateFolder}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 dark:text-gray-200 ${active ? 'bg-gray-50 dark:bg-dark-700' : ''}`}
+                    >
+                      <AppIcon symbol="create_new_folder" fallback={FolderPlus} size={18} className="text-primary-600 dark:text-primary-400" />
+                      New Folder
+                    </button>
+                  )}
+                </MenuItem>
+              </MenuItems>
+            </Transition>
+          </Menu>
         </div>
 
         {/* Navigation */}

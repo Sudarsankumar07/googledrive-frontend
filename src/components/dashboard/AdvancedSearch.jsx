@@ -297,7 +297,7 @@ const AdvancedSearch = ({ files = [], folders = [], onSearchResults = () => { },
           <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`btn-ghost p-2 ${isFilterOpen ? 'text-brand-500' : ''}`}
+              className={`btn-ghost p-2 ${isFilterOpen ? 'text-primary-600 dark:text-primary-400' : ''}`}
               title="Advanced Filters"
             >
               <Filter className="w-4 h-4" />
@@ -449,7 +449,7 @@ const AdvancedSearch = ({ files = [], folders = [], onSearchResults = () => { },
             {hasActiveFilters() && (
               <button
                 onClick={clearAllFilters}
-                className="text-brand-500 hover:text-brand-600 font-medium"
+                className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 font-medium"
               >
                 Clear All Filters
               </button>

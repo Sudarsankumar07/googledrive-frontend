@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Cloud, Sun, Moon } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import AppIcon from '../common/Icon';
 
 const AuthLayout = ({ children, title, subtitle }) => {
   const { darkMode, toggleDarkMode } = useTheme();
@@ -9,18 +10,18 @@ const AuthLayout = ({ children, title, subtitle }) => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50 dark:from-dark-950 dark:via-dark-900 dark:to-dark-950 flex flex-col">
       {/* Background decoration */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-400/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-400/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-accent-400/10 rounded-full blur-3xl" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary-400/18 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary-400/12 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary-500/8 rounded-full blur-3xl" />
       </div>
 
       {/* Header */}
       <header className="relative z-10 flex items-center justify-between px-6 py-4">
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg shadow-primary-500/30">
-            <Cloud className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/25">
+            <AppIcon symbol="cloud" fallback={Cloud} size={24} className="text-white" />
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
+          <span className="text-xl font-bold bg-gradient-to-r from-primary-700 to-primary-500 bg-clip-text text-transparent">
             CloudDrive
           </span>
         </Link>
@@ -29,7 +30,11 @@ const AuthLayout = ({ children, title, subtitle }) => {
           onClick={toggleDarkMode}
           className="p-2.5 rounded-xl text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-dark-800/50 transition-colors"
         >
-          {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          <AppIcon
+            symbol={darkMode ? 'light_mode' : 'dark_mode'}
+            fallback={darkMode ? Sun : Moon}
+            size={20}
+          />
         </button>
       </header>
 
@@ -64,3 +69,4 @@ const AuthLayout = ({ children, title, subtitle }) => {
 };
 
 export default AuthLayout;
+

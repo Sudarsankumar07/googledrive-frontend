@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import AuthLayout from '../layout/AuthLayout';
@@ -10,21 +10,29 @@ const ActivateAccount = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState('loading'); // loading, success, error
   const [message, setMessage] = useState('');
+  const hasActivated = useRef(false);
 
   useEffect(() => {
     const activateAccount = async () => {
+      // Prevent double activation in React StrictMode
+      if (hasActivated.current) return;
+      hasActivated.current = true;
+
       try {
         const result = await authService.activateAccount(token);
         if (result.success) {
           setStatus('success');
-          setMessage('Your account has been activated successfully!');
+          setMessage(result.message || 'Your account has been activated successfully!');
         } else {
           setStatus('error');
           setMessage(result.message || 'Failed to activate account');
         }
       } catch (error) {
         setStatus('error');
-        setMessage(error.message || 'Something went wrong');
+        // Extract error message from API response
+        const errorMessage = error.response?.data?.message || error.message || 'Something went wrong';
+        setMessage(errorMessage);
+        console.error('Activation error:', error);
       }
     };
 
@@ -110,8 +118,11 @@ const ActivateAccount = () => {
             className="block text-center text-primary-600 hover:text-primary-700 dark:text-primary-400 font-medium"
           >
             Back to login
-          </Link>
-        </div>
+          </Link>          
+          <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-4">
+            Need help? The activation link is valid for 24 hours. If your link has expired, 
+            you can request a new one from the login page.
+          </p>        </div>
       </div>
     </AuthLayout>
   );

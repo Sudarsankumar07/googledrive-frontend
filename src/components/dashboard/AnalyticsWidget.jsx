@@ -179,7 +179,7 @@ const AnalyticsWidget = () => {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="text-center p-4 glass rounded-xl">
-            <Files className="w-8 h-8 mx-auto text-brand-500 mb-2" />
+            <Files className="w-8 h-8 mx-auto text-primary-500 mb-2" />
             <p className="text-2xl font-bold text-gray-800">{analytics.totalFiles}</p>
             <p className="text-sm text-gray-600 dark:text-gray-300">Total Files</p>
           </div>
@@ -258,7 +258,7 @@ const AnalyticsWidget = () => {
             <div className="space-y-3">
               {analytics.recentFiles.map((file, index) => (
                 <div key={file._id || index} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700">
-                  <div className="w-2 h-2 bg-brand-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-800 dark:text-white truncate">{file.name}</p>
                     <p className="text-xs text-gray-500">{formatTimeAgo(file.createdAt || file.uploadedAt)}</p>

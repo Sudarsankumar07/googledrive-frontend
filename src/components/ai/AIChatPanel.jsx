@@ -52,7 +52,7 @@ const AIChatPanel = () => {
       <div className="absolute right-0 top-0 h-full w-full sm:w-[420px] bg-white dark:bg-dark-900 border-l border-gray-200 dark:border-dark-800 shadow-2xl flex flex-col">
         <div className="p-4 border-b border-gray-200 dark:border-dark-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg shadow-primary-500/25">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/25">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -146,4 +146,3 @@ const AIChatPanel = () => {
 };
 
 export default AIChatPanel;
-

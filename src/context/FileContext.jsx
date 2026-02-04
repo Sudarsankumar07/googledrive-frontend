@@ -78,19 +78,17 @@ export const FileProvider = ({ children }) => {
 
   const deleteFile = async (fileId) => {
     try {
-      console.log('🗑️ Attempting to delete file:', fileId);
       const response = await fileService.deleteFile(fileId);
-      console.log('🗑️ Delete response:', response);
       if (response.success) {
         toast.success('File deleted successfully');
         refreshFiles();
       } else {
-        console.error('❌ Delete failed:', response.message);
+        console.error('Delete failed:', response.message);
         toast.error(response.message || 'Failed to delete file');
       }
       return response;
     } catch (error) {
-      console.error('❌ Delete error:', error);
+      console.error('Delete error:', error);
       toast.error(error.response?.data?.message || 'Failed to delete file');
       throw error;
     }
@@ -98,19 +96,17 @@ export const FileProvider = ({ children }) => {
 
   const deleteFolder = async (folderId) => {
     try {
-      console.log('🗑️ Attempting to delete folder:', folderId);
       const response = await folderService.deleteFolder(folderId);
-      console.log('🗑️ Delete response:', response);
       if (response.success) {
         toast.success('Folder deleted successfully');
         refreshFiles();
       } else {
-        console.error('❌ Delete failed:', response.message);
+        console.error('Delete failed:', response.message);
         toast.error(response.message || 'Failed to delete folder');
       }
       return response;
     } catch (error) {
-      console.error('❌ Delete error:', error);
+      console.error('Delete error:', error);
       toast.error(error.response?.data?.message || 'Failed to delete folder');
       throw error;
     }

@@ -72,7 +72,7 @@ const UploadDropzone = ({ children }) => {
         <div className="fixed inset-0 z-50 bg-primary-500/10 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-white dark:bg-dark-800 rounded-3xl p-12 shadow-2xl border-2 border-dashed border-primary-400 m-8">
             <div className="text-center space-y-4">
-              <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center animate-bounce">
+              <div className="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center animate-bounce">
                 <Cloud className="w-10 h-10 text-white" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">

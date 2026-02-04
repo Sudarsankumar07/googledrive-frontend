@@ -38,7 +38,7 @@ const EmptyState = ({
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
-      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-100 to-purple-100 dark:from-primary-900/30 dark:to-purple-900/30 flex items-center justify-center mb-6">
+      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900/30 dark:to-primary-900/10 flex items-center justify-center mb-6">
         <Icon className="w-10 h-10 text-primary-500" />
       </div>
       <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">

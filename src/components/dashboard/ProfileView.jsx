@@ -81,7 +81,7 @@ const ProfileView = () => {
         {/* Profile summary */}
         <div className="card p-6 lg:col-span-1">
           <div className="flex flex-col items-center text-center">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white text-2xl font-semibold shadow-lg shadow-primary-500/30">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 flex items-center justify-center text-white text-2xl font-semibold shadow-lg shadow-primary-500/25">
               {initials || <User className="w-10 h-10" />}
             </div>
             <div className="mt-4">
@@ -157,4 +157,3 @@ const ProfileView = () => {
 };
 
 export default ProfileView;
-
