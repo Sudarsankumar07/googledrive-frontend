@@ -13,6 +13,7 @@ import {
   Trash2,
   Edit2,
   Eye,
+  RotateCcw,
   Share2,
   Star
 } from 'lucide-react';
@@ -48,7 +49,7 @@ const getFileIcon = (type, mimeType) => {
   }
 };
 
-const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
+const FileItem = ({ file, viewMode = 'grid', isHighlighted = false, isTrashView = false, onRefresh }) => {
   const { deleteFile, toggleStar } = useFiles();
   const { openChat } = useAI();
   const [showMenu, setShowMenu] = useState(false);
@@ -58,6 +59,7 @@ const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
   const [showQRShare, setShowQRShare] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState(null);
   const [thumbnailLoading, setThumbnailLoading] = useState(false);
+  const [thumbnailObjectUrl, setThumbnailObjectUrl] = useState(null);
   const menuRef = useRef(null);
   const itemRef = useRef(null);
 
@@ -77,14 +79,32 @@ const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
       setThumbnailLoading(true);
       fileService.downloadFile(file._id)
         .then(result => {
-          if (result.success && result.data.downloadUrl) {
+          if (!result?.success) return;
+
+          if (result.data?.downloadMode === 'signedUrl' && result.data.downloadUrl) {
             setThumbnailUrl(result.data.downloadUrl);
+            return;
+          }
+
+          if (result.data?.downloadMode === 'proxy') {
+            return fileService.downloadFileContent(file._id, { disposition: 'inline' })
+              .then(({ data }) => {
+                const objUrl = URL.createObjectURL(data);
+                setThumbnailObjectUrl(objUrl);
+                setThumbnailUrl(objUrl);
+              });
           }
         })
         .catch(err => console.error('Failed to load thumbnail:', err))
         .finally(() => setThumbnailLoading(false));
     }
-  }, [file._id, fileType, thumbnailUrl, thumbnailLoading]);
+
+    return () => {
+      if (thumbnailObjectUrl) {
+        URL.revokeObjectURL(thumbnailObjectUrl);
+      }
+    };
+  }, [file._id, fileType, thumbnailUrl, thumbnailLoading, thumbnailObjectUrl]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -99,8 +119,28 @@ const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
   const handleDownload = async () => {
     try {
       const result = await fileService.downloadFile(file._id);
-      if (result.success && result.data.downloadUrl) {
+      if (!result?.success) {
+        toast.error('Download failed');
+        return;
+      }
+
+      if (result.data?.downloadMode === 'signedUrl' && result.data.downloadUrl) {
         window.open(result.data.downloadUrl, '_blank');
+        return;
+      }
+
+      if (result.data?.downloadMode === 'proxy') {
+        const fileName = result.data?.fileName || file.name || 'download';
+        const { data: blob } = await fileService.downloadFileContent(file._id, { disposition: 'attachment' });
+        const objUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(objUrl), 0);
+        return;
       } else {
         toast.error('Download URL not available');
       }
@@ -111,23 +151,71 @@ const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
   };
 
   const handlePreview = () => {
+    if (isTrashView || file?.isDeleted) {
+      toast.info('Restore this file to preview');
+      setShowMenu(false);
+      return;
+    }
     setShowPreview(true);
     setShowMenu(false);
   };
 
   const handleAskAI = () => {
+    if (isTrashView || file?.isDeleted) {
+      toast.info('Restore this file to use AI');
+      setShowMenu(false);
+      return;
+    }
     openChat({ context: { selectedFiles: [file._id] } });
     setShowMenu(false);
   };
 
   const handleQRShare = () => {
+    if (isTrashView || file?.isDeleted) {
+      toast.info('Restore this file to share');
+      setShowMenu(false);
+      return;
+    }
     setShowQRShare(true);
     setShowMenu(false);
   };
 
+  const handleRestore = async () => {
+    try {
+      const result = await fileService.restoreFile(file._id);
+      if (result?.success) {
+        toast.success('File restored successfully');
+        onRefresh?.();
+      } else {
+        toast.error(result?.message || 'Failed to restore file');
+      }
+    } catch (e) {
+      toast.error(e?.response?.data?.message || 'Failed to restore file');
+    } finally {
+      setShowMenu(false);
+    }
+  };
+
   const handleDelete = async () => {
-    await deleteFile(file._id);
-    setShowDeleteConfirm(false);
+    try {
+      if (isTrashView || file?.isDeleted) {
+        const result = await fileService.permanentlyDeleteFile(file._id);
+        if (result?.success) {
+          toast.success('File permanently deleted');
+          onRefresh?.();
+        } else {
+          toast.error(result?.message || 'Failed to delete file');
+        }
+        return;
+      }
+
+      await deleteFile(file._id);
+      onRefresh?.();
+    } catch (e) {
+      toast.error(e?.response?.data?.message || 'Failed to delete file');
+    } finally {
+      setShowDeleteConfirm(false);
+    }
   };
 
   if (viewMode === 'list') {
@@ -170,13 +258,14 @@ const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              toggleStar(file._id, file.isStarred);
+              if (!isTrashView) toggleStar(file._id, file.isStarred);
             }}
             className={`p-2 rounded-lg transition-colors ${file.isStarred
               ? 'text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
               : 'text-gray-400 hover:text-yellow-500 hover:bg-gray-100 dark:hover:bg-dark-700 opacity-0 group-hover:opacity-100'
               }`}
             title={file.isStarred ? 'Unstar' : 'Star'}
+            disabled={isTrashView}
           >
             <Star
               className="w-5 h-5"
@@ -197,45 +286,63 @@ const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
 
             {showMenu && (
               <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-100 dark:border-dark-700 py-1 z-10">
-                <button
-                  onClick={handleAskAI}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  Ask AI
-                </button>
-                <button
-                  onClick={handlePreview}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
-                >
-                  <Eye className="w-4 h-4" />
-                  Preview
-                </button>
-                <button
-                  onClick={handleDownload}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </button>
-                <button
-                  onClick={handleQRShare}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
-                >
-                  <Share2 className="w-4 h-4" />
-                  QR Share
-                </button>
-                <button
-                  onClick={() => {
-                    setShowRename(true);
-                    setShowMenu(false);
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Rename
-                </button>
-                <hr className="my-1 border-gray-100 dark:border-dark-700" />
+                {!isTrashView && (
+                  <>
+                    <button
+                      onClick={handleAskAI}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Ask AI
+                    </button>
+                    <button
+                      onClick={handlePreview}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Preview
+                    </button>
+                    <button
+                      onClick={handleDownload}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                    >
+                      <Download className="w-4 h-4" />
+                      Download
+                    </button>
+                    <button
+                      onClick={handleQRShare}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                    >
+                      <Share2 className="w-4 h-4" />
+                      QR Share
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowRename(true);
+                        setShowMenu(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      Rename
+                    </button>
+                    <hr className="my-1 border-gray-100 dark:border-dark-700" />
+                  </>
+                )}
+
+                {isTrashView && (
+                  <>
+                    <button
+                      onClick={handleRestore}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Restore
+                    </button>
+                    <hr className="my-1 border-gray-100 dark:border-dark-700" />
+                  </>
+                )}
+
                 <button
                   onClick={() => {
                     setShowDeleteConfirm(true);
@@ -244,7 +351,7 @@ const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {isTrashView ? 'Delete Permanently' : 'Delete'}
                 </button>
               </div>
             )}
@@ -255,9 +362,11 @@ const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
           onConfirm={handleDelete}
-          title="Delete file"
-          message={`Are you sure you want to delete "${file.name}"? This action cannot be undone.`}
-          confirmText="Delete"
+          title={isTrashView ? 'Delete permanently' : 'Delete file'}
+          message={isTrashView
+            ? `Permanently delete "${file.name}"? This action cannot be undone.`
+            : `Move "${file.name}" to trash? You can restore it later.`}
+          confirmText={isTrashView ? 'Delete permanently' : 'Move to trash'}
           danger
         />
 
@@ -342,13 +451,14 @@ const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              toggleStar(file._id, file.isStarred);
+              if (!isTrashView) toggleStar(file._id, file.isStarred);
             }}
             className={`p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-all backdrop-blur-sm ${file.isStarred
               ? 'text-yellow-500 hover:bg-white/80 dark:hover:bg-dark-700 opacity-100'
               : 'text-gray-400 hover:text-yellow-500 hover:bg-white/80 dark:hover:bg-dark-700'
               }`}
             title={file.isStarred ? 'Unstar' : 'Star'}
+            disabled={isTrashView}
           >
             <Star
               className="w-4 h-4"
@@ -368,45 +478,62 @@ const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
 
           {showMenu && (
             <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-100 dark:border-dark-700 py-1 z-10">
-              <button
-                onClick={handleAskAI}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
-              >
-                <Sparkles className="w-4 h-4" />
-                Ask AI
-              </button>
-              <button
-                onClick={handlePreview}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
-              >
-                <Eye className="w-4 h-4" />
-                Preview
-              </button>
-              <button
-                onClick={handleDownload}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
-              >
-                <Download className="w-4 h-4" />
-                Download
-              </button>
-              <button
-                onClick={handleQRShare}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
-              >
-                <Share2 className="w-4 h-4" />
-                QR Share
-              </button>
-              <button
-                onClick={() => {
-                  setShowRename(true);
-                  setShowMenu(false);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
-              >
-                <Edit2 className="w-4 h-4" />
-                Rename
-              </button>
-              <hr className="my-1 border-gray-100 dark:border-dark-700" />
+              {!isTrashView && (
+                <>
+                  <button
+                    onClick={handleAskAI}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Ask AI
+                  </button>
+                  <button
+                    onClick={handlePreview}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Preview
+                  </button>
+                  <button
+                    onClick={handleDownload}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </button>
+                  <button
+                    onClick={handleQRShare}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    QR Share
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowRename(true);
+                      setShowMenu(false);
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Rename
+                  </button>
+                  <hr className="my-1 border-gray-100 dark:border-dark-700" />
+                </>
+              )}
+
+              {isTrashView && (
+                <>
+                  <button
+                    onClick={handleRestore}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-700"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Restore
+                  </button>
+                  <hr className="my-1 border-gray-100 dark:border-dark-700" />
+                </>
+              )}
               <button
                 onClick={() => {
                   setShowDeleteConfirm(true);
@@ -415,7 +542,7 @@ const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
               >
                 <Trash2 className="w-4 h-4" />
-                Delete
+                {isTrashView ? 'Delete Permanently' : 'Delete'}
               </button>
             </div>
           )}
@@ -426,9 +553,11 @@ const FileItem = ({ file, viewMode = 'grid', isHighlighted = false }) => {
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleDelete}
-        title="Delete file"
-        message={`Are you sure you want to delete "${file.name}"? This action cannot be undone.`}
-        confirmText="Delete"
+        title={isTrashView ? 'Delete permanently' : 'Delete file'}
+        message={isTrashView
+          ? `Permanently delete "${file.name}"? This action cannot be undone.`
+          : `Move "${file.name}" to trash? You can restore it later.`}
+        confirmText={isTrashView ? 'Delete permanently' : 'Move to trash'}
         danger
       />
 

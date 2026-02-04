@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Download, Eye, ZoomIn, ZoomOut } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -11,6 +11,7 @@ import FileSummaryCard from '../ai/FileSummaryCard';
 
 const FilePreview = ({ file, onClose, isOpen }) => {
   const { openChat } = useAI();
+  const objectUrlRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imageZoom, setImageZoom] = useState(1);
@@ -34,24 +35,48 @@ const FilePreview = ({ file, onClose, isOpen }) => {
 
     // Fetch download URL first
     fetchDownloadUrl();
+
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+    };
   }, [isOpen, file]);
 
   const fetchDownloadUrl = async () => {
     try {
       const result = await fileService.downloadFile(file._id);
-      if (result.success && result.data.downloadUrl) {
+      if (!result?.success) throw new Error('Download failed');
+
+      if (result.data?.downloadMode === 'signedUrl' && result.data.downloadUrl) {
         setDownloadUrl(result.data.downloadUrl);
 
-        // Load text content if it's a text file
         if (isTextFile(file.mimeType, file.name)) {
           fetchTextContent(result.data.downloadUrl);
         } else {
           setLoading(false);
         }
-      } else {
-        setError('Failed to get download URL');
-        setLoading(false);
+        return;
       }
+
+      if (result.data?.downloadMode === 'proxy') {
+        const { data: blob } = await fileService.downloadFileContent(file._id, { disposition: 'inline' });
+        const objUrl = URL.createObjectURL(blob);
+        objectUrlRef.current = objUrl;
+        setDownloadUrl(objUrl);
+
+        if (isTextFile(file.mimeType, file.name)) {
+          const content = await blob.text();
+          setTextContent(content.slice(0, 5000));
+        }
+
+        setLoading(false);
+        return;
+      }
+
+      setError('Failed to get download URL');
+      setLoading(false);
     } catch (err) {
       setError('Failed to load file');
       setLoading(false);
@@ -174,17 +199,8 @@ const FilePreview = ({ file, onClose, isOpen }) => {
         <p className="text-sm text-gray-400">
           {fileType.charAt(0).toUpperCase() + fileType.slice(1)} file • {file.name}
         </p>
-        <button
-          onClick={() => {
-            if (downloadUrl) {
-              window.open(downloadUrl, '_blank');
-            } else {
-              setError('Download URL not available');
-            }
-          }}
-          className="btn-primary mt-4"
-        >
-          Open in New Tab
+        <button onClick={handleDownload} className="btn-primary mt-4">
+          Download
         </button>
       </div>
     );
@@ -251,6 +267,41 @@ const FilePreview = ({ file, onClose, isOpen }) => {
     openChat({ context: { selectedFiles: [file._id] } });
   };
 
+  const handleDownload = async () => {
+    if (!file?._id) return;
+
+    try {
+      const result = await fileService.downloadFile(file._id);
+      if (!result?.success) {
+        toast.error('Download failed');
+        return;
+      }
+
+      if (result.data?.downloadMode === 'signedUrl' && result.data.downloadUrl) {
+        window.open(result.data.downloadUrl, '_blank');
+        return;
+      }
+
+      if (result.data?.downloadMode === 'proxy') {
+        const fileName = result.data?.fileName || file.name || 'download';
+        const { data: blob } = await fileService.downloadFileContent(file._id, { disposition: 'attachment' });
+        const objUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = objUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(objUrl), 0);
+        return;
+      }
+
+      toast.error('Download not available');
+    } catch (e) {
+      toast.error('Failed to download file');
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -268,13 +319,7 @@ const FilePreview = ({ file, onClose, isOpen }) => {
           </div>
           <div className="flex gap-2 ml-4">
             <button
-              onClick={() => {
-                if (downloadUrl) {
-                  window.open(downloadUrl, '_blank');
-                } else {
-                  setError('Download URL not available');
-                }
-              }}
+              onClick={handleDownload}
               className="btn-ghost p-2"
               title="Download"
             >

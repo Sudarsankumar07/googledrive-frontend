@@ -5,6 +5,7 @@ import {
   Clock,
   Star,
   Trash2,
+  Archive,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -29,6 +30,7 @@ const Sidebar = ({ isOpen, onToggle, onCreateFolder, onUpload }) => {
     { icon: HardDrive, label: 'My Drive', path: '/dashboard', active: true },
     { icon: Clock, label: 'Recent', path: '/dashboard/recent' },
     { icon: Star, label: 'Starred', path: '/dashboard/starred' },
+    { icon: Archive, label: 'Compress', path: '/dashboard/compress' },
     { icon: Trash2, label: 'Trash', path: '/dashboard/trash' },
   ];
 

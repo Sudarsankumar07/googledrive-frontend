@@ -211,6 +211,11 @@ body {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
+/* Card without transitions - for content that loads dynamically */
+.card-no-transition {
+  transition: none !important;
+}
+
 /* Glass effect */
 .glass {
   background: rgba(255, 255, 255, 0.8);

@@ -5,7 +5,7 @@ import Loader from '../common/Loader';
 import EmptyState from '../common/EmptyState';
 import { useFiles } from '../../context/FileContext';
 
-const FileList = ({ folders, files, viewMode, loading }) => {
+const FileList = ({ folders, files, viewMode, loading, onRefresh, isTrashView = false }) => {
   const { highlightedFileId } = useFiles();
 
   if (loading) {
@@ -56,6 +56,8 @@ const FileList = ({ folders, files, viewMode, loading }) => {
                 file={file}
                 viewMode="list"
                 isHighlighted={file._id === highlightedFileId}
+                onRefresh={onRefresh}
+                isTrashView={isTrashView}
               />
             ))}
           </div>
@@ -95,6 +97,8 @@ const FileList = ({ folders, files, viewMode, loading }) => {
                 file={file}
                 viewMode="grid"
                 isHighlighted={file._id === highlightedFileId}
+                onRefresh={onRefresh}
+                isTrashView={isTrashView}
               />
             ))}
           </div>

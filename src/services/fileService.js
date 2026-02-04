@@ -35,6 +35,14 @@ export const fileService = {
     return response.data;
   },
 
+  downloadFileContent: async (fileId, { disposition = 'attachment' } = {}) => {
+    const response = await api.get(`/files/${fileId}/content`, {
+      params: { disposition },
+      responseType: 'blob',
+    });
+    return { data: response.data, headers: response.headers };
+  },
+
   deleteFile: async (fileId) => {
     const response = await api.delete(`/files/${fileId}`);
     return response.data;

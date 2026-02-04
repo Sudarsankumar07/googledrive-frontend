@@ -69,7 +69,7 @@ A modern, responsive Google Drive clone built with React and Tailwind CSS. Featu
    
    Create a `.env` file in the root directory:
    ```env
-   VITE_API_URL=http://localhost:5000/api
+   VITE_API_URL=http://localhost:5001/api
    ```
 
 4. **Start development server**

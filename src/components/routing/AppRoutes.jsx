@@ -13,6 +13,7 @@ import Dashboard from '../dashboard/Dashboard';
 import RecentView from '../dashboard/RecentView';
 import StarredView from '../dashboard/StarredView';
 import TrashView from '../dashboard/TrashView';
+import CompressView from '../dashboard/CompressView';
 import ProfileView from '../dashboard/ProfileView';
 import SettingsView from '../dashboard/SettingsView';
 import NotificationsView from '../dashboard/NotificationsView';
@@ -74,6 +75,7 @@ const AppRoutes = () => {
         <Route index element={<Dashboard />} />
         <Route path="recent" element={<RecentView />} />
         <Route path="starred" element={<StarredView />} />
+        <Route path="compress" element={<CompressView />} />
         <Route path="trash" element={<TrashView />} />
         <Route path="profile" element={<ProfileView />} />
         <Route path="settings" element={<SettingsView />} />

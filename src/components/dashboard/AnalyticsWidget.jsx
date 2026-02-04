@@ -171,7 +171,7 @@ const AnalyticsWidget = () => {
   return (
     <div className="space-y-6">
       {/* Overview Stats */}
-      <div className="card p-6">
+      <div className="card card-no-transition p-6">
         <h3 className="font-semibold mb-6 flex items-center gap-2 text-gray-800 dark:text-white">
           <TrendingUp className="w-5 h-5 text-primary-500" />
           Storage Analytics
