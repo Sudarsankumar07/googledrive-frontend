@@ -1,14 +1,43 @@
 {
   "buildCommand": "npm run build",
-  "devCommand": "npm run dev",
   "outputDirectory": "dist",
   "routes": [
+    {
+      "src": "/assets/.*",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": ".*\\.js$",
+      "dest": "/$0"
+    },
+    {
+      "src": ".*\\.css$",
+      "dest": "/$0"
+    },
+    {
+      "src": ".*\\.png$",
+      "dest": "/$0"
+    },
+    {
+      "src": ".*\\.jpg$",
+      "dest": "/$0"
+    },
+    {
+      "src": ".*\\.svg$",
+      "dest": "/$0"
+    },
+    {
+      "src": ".*\\.woff2?$",
+      "dest": "/$0"
+    },
     {
       "src": "/api/.*",
       "status": 404
     },
     {
-      "src": "/(.*)",
+      "src": "/(?!.*\\..*)",
       "dest": "/index.html"
     }
   ]
