@@ -53,6 +53,13 @@ export const authService = {
     return response.data;
   },
 
+  deleteAccount: async (password) => {
+    const response = await api.delete('/auth/me', {
+      data: { password }
+    });
+    return response.data;
+  },
+
   isAuthenticated: () => {
     return !!localStorage.getItem('token');
   },

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Moon, Sun, User } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import Button from '../common/Button';
+import DeleteAccount from '../common/DeleteAccount';
 
 const SettingsView = () => {
   const navigate = useNavigate();
@@ -81,6 +82,9 @@ const SettingsView = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Account Section */}
+      <DeleteAccount />
     </div>
   );
 };
