@@ -39,18 +39,25 @@ const Register = () => {
   if (registered) {
     return (
       <AuthLayout
-        title="Registration Successful!"
-        subtitle="Your account is ready"
+        title="Check Your Email!"
+        subtitle="Activation email sent"
       >
         <div className="text-center space-y-6">
-          <div className="w-20 h-20 mx-auto rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-            <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
+          <div className="w-20 h-20 mx-auto rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+            <Mail className="w-10 h-10 text-blue-600 dark:text-blue-400" />
           </div>
 
-          <p className="text-gray-600 dark:text-gray-400">
-            Your account has been created successfully.
-            You can now login with your credentials.
-          </p>
+          <div className="space-y-3">
+            <p className="text-gray-600 dark:text-gray-400">
+              We've sent an activation link to your email address.
+            </p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Please check your inbox and click the activation link to activate your account before logging in.
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-500">
+              Don't forget to check your spam folder if you don't see the email.
+            </p>
+          </div>
 
           <div className="pt-4">
             <Link
